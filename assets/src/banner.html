@@ -1,0 +1,68 @@
+<!doctype html>
+<!-- Source of assets/banner.png (rendered by scripts/screenshots.js). Uses the real editor. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=JetBrains+Mono:wght@400..700&family=Martian+Mono:wdth,wght@75..112.5,400..800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box }
+  html, body { margin: 0 }
+  body { width: 1280px; height: 640px; overflow: hidden; background: #1a1d23; font-family: Geist, system-ui, sans-serif; color: #b9c0cc; position: relative }
+  .glow { position: absolute; inset: 0; background: radial-gradient(700px 420px at 78% 60%, #528bff1f, transparent 70%), radial-gradient(500px 300px at 10% 0%, #c678dd18, transparent 70%) }
+  .grid { position: absolute; inset: 0; opacity: .5; background-image: linear-gradient(#ffffff06 1px, transparent 1px), linear-gradient(90deg, #ffffff06 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(90deg, transparent, #000 60%) }
+  .left { position: absolute; left: 72px; top: 92px; width: 640px }
+  .logo { width: 96px; height: 96px; filter: drop-shadow(0 16px 36px #000a) }
+  h1 { margin: 28px 0 0; font: 800 88px/0.95 'Martian Mono', monospace; font-stretch: 78%; letter-spacing: -.05em; color: #eef1f6 }
+  p { margin: 22px 0 0; font-size: 25px; line-height: 1.45; color: #c9ced8 }
+  p b { color: #eef1f6; font-weight: 600 }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px }
+  .chip { display: inline-flex; align-items: center; gap: 8px; font: 500 15px/1 'JetBrains Mono', monospace; color: #dfe3ea; padding: 9px 12px; border-radius: 10px; background: #282c34; border: 1px solid #3d4452 }
+  .chip i { width: 16px; height: 6px; border-radius: 3px; background: var(--c) }
+  .window { position: absolute; right: -40px; top: 110px; width: 600px; height: 440px; border-radius: 16px; overflow: hidden; background: #282c34; border: 1px solid #3d4452; box-shadow: 0 40px 90px -20px #000e, 0 0 0 1px #0004; transform: perspective(1400px) rotateY(-9deg) rotateX(3deg); transform-origin: left center }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #21252b; border-bottom: 1px solid #323845; font: 13px 'JetBrains Mono', monospace; color: #808898 }
+  .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a404b }
+  .bar span { margin-left: 8px; color: #b9c0cc }
+  #ed { height: 400px }
+</style>
+</head>
+<body>
+  <div class="glow"></div><div class="grid"></div>
+  <div class="left">
+    <img class="logo" src="../logo.svg" alt="">
+    <h1>Jonacode</h1>
+    <p>Editor de código <b>leve</b>, <b>modular</b> e <b>virtualizado</b> para a web. Tema One Dark, linguagens declarativas e zero dependências.</p>
+    <div class="chips">
+      <span class="chip" style="--c:#56b6c2"><i></i>100k linhas</span>
+      <span class="chip" style="--c:#61afef"><i></i>~16 kB gzip</span>
+      <span class="chip" style="--c:#98c379"><i></i>React · Vue · Angular</span>
+      <span class="chip" style="--c:#e5c07b"><i></i>&lt;jona-code&gt;</span>
+    </div>
+  </div>
+  <div class="window"><div class="bar"><i></i><i></i><i></i><span>editor.js</span></div><div id="ed"></div></div>
+  <script src="../../dist/jonacode.iife.min.js"></script>
+  <script>
+    const { createEditor, basicSetup, javascript } = Jonacode
+    const ed = createEditor(document.getElementById('ed'), {
+      language: javascript,
+      extensions: basicSetup(),
+      fontSize: 15,
+      value: `import { createEditor, basicSetup } from 'jonacode'
+import { javascript } from 'jonacode/languages/javascript'
+
+// Tudo em poucas linhas ✨
+export const editor = createEditor(app, {
+  value: \`console.log('Olá, \${nome}!')\`,
+  language: javascript,
+  extensions: basicSetup(),
+})
+
+editor.on('change', () => {
+  salvar(editor.getValue())
+})
+`,
+    })
+    ed.setSelection({ line: 6, col: 17 })
+    ed.focus()
+  </script>
+</body>
+</html>

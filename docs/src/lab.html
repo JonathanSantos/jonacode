@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratório de linguagens · Jonacode</title>
+  <meta name="description" content="Crie, teste e exporte gramáticas do Jonacode (ou importe do Monaco) no navegador.">
+  <link rel="icon" href="@favicon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+  <!-- @style -->
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="index.html#linguagens/lab" title="Voltar à documentação"><span class="logo"><!-- @logo --></span><b>Laboratório</b><span class="muted">de linguagens</span></a>
+    <div class="seg" role="tablist" aria-label="Formato da gramática">
+      <button type="button" role="tab" data-format="jonacode" aria-selected="true">Jonacode</button>
+      <button type="button" role="tab" data-format="monarch" aria-selected="false">Monarch</button>
+    </div>
+    <label class="field">Começar de <select id="preset"></select></label>
+    <label class="field">Tema <select id="theme"><option value="dark">One Dark</option><option value="light">One Light</option><option value="vscode">Tema do VS Code…</option></select></label>
+    <span class="grow"></span>
+    <button type="button" class="btn" id="copy-module">Copiar módulo</button>
+    <button type="button" class="btn" id="copy-tests">Copiar testes</button>
+    <button type="button" class="btn primary" id="download">Baixar .js</button>
+  </header>
+
+  <main class="lab">
+    <section class="pane grammar">
+      <div class="pane-bar"><span class="dot"></span><span id="grammar-title">gramatica.js</span><span class="grow"></span><span class="hint" id="grammar-hint"></span></div>
+      <div class="host" id="grammar"></div>
+    </section>
+    <section class="pane sample">
+      <div class="pane-bar"><span class="dot"></span><span>exemplo</span><span class="grow"></span><span class="hint">passe o mouse para ver o token · mova o cursor</span></div>
+      <div class="host" id="sample"></div>
+    </section>
+    <section class="pane inspect">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="line" aria-selected="true">Tokens da linha</button>
+        <button type="button" role="tab" data-tab="stack" aria-selected="false">Pilha no cursor</button>
+        <button type="button" role="tab" data-tab="tests" aria-selected="false">Testes <span class="badge" id="tests-badge"></span></button>
+      </div>
+      <div class="tab" data-panel="line"><pre class="tokens" id="line-tokens"></pre></div>
+      <div class="tab" data-panel="stack" hidden><div class="stack" id="stack"></div><p class="muted small" id="stack-note"></p></div>
+      <div class="tab tests" data-panel="tests" hidden>
+        <div class="tests-bar">
+          <button type="button" class="btn small" id="tests-generate">Gerar do exemplo</button>
+          <button type="button" class="btn small primary" id="tests-run">Rodar</button>
+          <span class="muted small">Formato: linha de código e, embaixo, <code>^^^ tipo</code> sob cada token.</span>
+        </div>
+        <div class="host" id="tests"></div>
+        <pre class="tests-out" id="tests-out"></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="status" id="status"></footer>
+
+  <dialog id="vscode-dialog">
+    <form method="dialog">
+      <h2>Tema do VS Code</h2>
+      <p class="muted">Cole o JSON de um tema (o arquivo <code>*-color-theme.json</code>; comentários e vírgulas sobrando são aceitos).</p>
+      <textarea id="vscode-json" spellcheck="false" placeholder='{ "type": "dark", "colors": { … }, "tokenColors": [ … ] }'></textarea>
+      <p class="error" id="vscode-error"></p>
+      <div class="row"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" id="vscode-apply" value="apply">Aplicar</button></div>
+    </form>
+  </dialog>
+
+  <!-- @lib -->
+  <!-- @app -->
+</body>
+</html>

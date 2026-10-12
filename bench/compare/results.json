@@ -1,0 +1,196 @@
+{
+  "date": "2026-09-26",
+  "machine": {
+    "cpu": "Apple M2",
+    "platform": "darwin",
+    "browser": "Chrome/153.0.8010.53",
+    "node": "v24.17.0"
+  },
+  "document": {
+    "lines": 100000,
+    "bytes": 3187499
+  },
+  "note": "Tempos incluem a espera pelo próximo quadro (~16 ms). Mediana de 3 execuções.",
+  "editors": {
+    "jonacode-full": {
+      "name": "Jonacode",
+      "setup": "basicSetup + JavaScript",
+      "pkg": null,
+      "version": "0.1.0",
+      "size": {
+        "jsMin": 119811,
+        "jsGzip": 40432,
+        "cssGzip": 0
+      },
+      "runtime": {
+        "firstPaint": 24.199999999254942,
+        "domNodes": 203,
+        "heapMB": 6.414859771728516,
+        "scrollJump": 33.30000000074506,
+        "runs": 3
+      }
+    },
+    "jonacode-core": {
+      "name": "Jonacode (núcleo)",
+      "setup": "createEditor, sem linguagem",
+      "pkg": null,
+      "version": "0.1.0",
+      "size": {
+        "jsMin": 80248,
+        "jsGzip": 27405,
+        "cssGzip": 0
+      },
+      "runtime": {
+        "firstPaint": 25.899999998509884,
+        "domNodes": 56,
+        "heapMB": 6.057136535644531,
+        "scrollJump": 25.40000000037253,
+        "runs": 3
+      }
+    },
+    "cm6-full": {
+      "name": "CodeMirror 6",
+      "setup": "basicSetup + JavaScript + One Dark",
+      "pkg": "@codemirror/view",
+      "version": "6.43.13",
+      "size": {
+        "jsMin": 505028,
+        "jsGzip": 169671,
+        "cssGzip": 0
+      },
+      "runtime": {
+        "firstPaint": 51.69999999925494,
+        "domNodes": 290,
+        "heapMB": 109.17547225952148,
+        "scrollJump": 25.300000000745058,
+        "runs": 3
+      }
+    },
+    "cm6-min": {
+      "name": "CodeMirror 6 (núcleo)",
+      "setup": "EditorView + EditorState",
+      "pkg": "@codemirror/view",
+      "version": "6.43.13",
+      "size": {
+        "jsMin": 200945,
+        "jsGzip": 65040,
+        "cssGzip": 0
+      },
+      "runtime": {
+        "firstPaint": 33.30000000074506,
+        "domNodes": 82,
+        "heapMB": 6.595775604248047,
+        "scrollJump": 34.69999999925494,
+        "runs": 3
+      }
+    },
+    "cm5": {
+      "name": "CodeMirror 5",
+      "setup": "JS + números + colchetes + linha ativa + busca",
+      "pkg": "cm5",
+      "version": "5.65.21",
+      "size": {
+        "jsMin": 216120,
+        "jsGzip": 71923,
+        "cssGzip": 1949
+      },
+      "runtime": {
+        "firstPaint": 47.40000000037253,
+        "domNodes": 390,
+        "heapMB": 11.768363952636719,
+        "scrollJump": 34.09999999962747,
+        "runs": 3
+      }
+    },
+    "monaco-min": {
+      "name": "Monaco (mínimo)",
+      "setup": "editor + linguagens Monarch",
+      "pkg": "monaco-editor",
+      "version": "0.57.0",
+      "size": {
+        "jsMin": 3182120,
+        "jsGzip": 827176,
+        "cssGzip": 14076
+      },
+      "runtime": {
+        "firstPaint": 128.59999999962747,
+        "domNodes": 440,
+        "heapMB": 29.084110260009766,
+        "scrollJump": 27.700000001117587,
+        "runs": 3
+      }
+    },
+    "monaco-full": {
+      "name": "Monaco",
+      "setup": "pacote completo",
+      "pkg": "monaco-editor",
+      "version": "0.57.0",
+      "size": {
+        "jsMin": 4549224,
+        "jsGzip": 1182725,
+        "cssGzip": 126750
+      },
+      "runtime": {
+        "firstPaint": 134.7000000011176,
+        "domNodes": 440,
+        "heapMB": 34.908390045166016,
+        "scrollJump": 22.40000000037253,
+        "runs": 3
+      }
+    },
+    "ace": {
+      "name": "Ace",
+      "setup": "JS + tema + busca",
+      "pkg": "ace-builds",
+      "version": "1.44.0",
+      "size": {
+        "jsMin": 516742,
+        "jsGzip": 143720,
+        "cssGzip": 0
+      },
+      "runtime": {
+        "firstPaint": 62,
+        "domNodes": 318,
+        "heapMB": 7.745563507080078,
+        "scrollJump": 26.299999998882413,
+        "runs": 3
+      }
+    },
+    "prism-code-editor": {
+      "name": "prism-code-editor",
+      "setup": "JS + colchetes + comandos + busca",
+      "pkg": "prism-code-editor",
+      "version": "5.4.0",
+      "size": {
+        "jsMin": 25398,
+        "jsGzip": 11534,
+        "cssGzip": 3042
+      },
+      "runtime": {
+        "firstPaint": 4183.39999999851,
+        "domNodes": 577461,
+        "heapMB": 73.95050811767578,
+        "scrollJump": 694.5999999996275,
+        "runs": 3
+      }
+    },
+    "codejar": {
+      "name": "CodeJar",
+      "setup": "CodeJar + Prism",
+      "pkg": "codejar",
+      "version": "4.3.0",
+      "size": {
+        "jsMin": 25732,
+        "jsGzip": 9972,
+        "cssGzip": 0
+      },
+      "runtime": {
+        "firstPaint": 1588,
+        "domNodes": 422422,
+        "heapMB": 1.1014404296875,
+        "scrollJump": 39.5,
+        "runs": 3
+      }
+    }
+  }
+}

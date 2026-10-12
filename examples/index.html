@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jonacode Playground</title>
+  <link rel="icon" href="../assets/logo.svg">
+  <style>
+    :root { color-scheme: dark; --bg: #1e2127; --panel: #21252b; --line: #2f343d; --text: #abb2bf; --muted: #7f848e; --accent: #61afef; }
+    :root.light { color-scheme: light; --bg: #eceef1; --panel: #fafafa; --line: #dcdfe4; --text: #383a42; --muted: #8b8d95; --accent: #4078f2; }
+    * { box-sizing: border-box }
+    html, body { height: 100%; margin: 0 }
+    body { background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; display: flex; flex-direction: column; padding: 16px; gap: 12px }
+    header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap }
+    header img { width: 34px; height: 34px }
+    h1 { font-size: 18px; margin: 0; font-weight: 650; letter-spacing: -.01em }
+    h1 span { color: var(--muted); font-weight: 400 }
+    .spacer { flex: 1 }
+    select, button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer }
+    button:hover, select:hover { border-color: var(--accent) }
+    label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px }
+    .frame { flex: 1; min-height: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 10px 40px #0004 }
+    footer { display: flex; gap: 18px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums }
+    footer b { color: var(--text); font-weight: 500 }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="../assets/logo.svg" alt="">
+    <h1>Jonacode <span>playground</span></h1>
+    <div class="spacer"></div>
+    <label>Linguagem
+      <select id="language">
+        <option value="javascript">JavaScript</option>
+        <option value="jonalang">JonaLang (inventada)</option>
+        <option value="text">Texto puro</option>
+      </select>
+    </label>
+    <label>Tema
+      <select id="theme">
+        <option value="oneDark">One Dark</option>
+        <option value="oneLight">One Light</option>
+        <option value="midnight">Midnight (custom)</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="readonly"> Somente leitura</label>
+    <label><input type="checkbox" id="wrap"> Quebra de linha</label>
+    <label><input type="checkbox" id="inspect"> Inspecionar tokens</label>
+    <button id="big">Carregar 100.000 linhas</button>
+  </header>
+
+  <div class="frame" id="editor"></div>
+
+  <footer>
+    <span>Ln <b id="ln">1</b>, Col <b id="col">1</b></span>
+    <span><b id="lines">0</b> linhas</span>
+    <span id="info"></span>
+  </footer>
+
+  <script type="module">
+    import { createEditor, basicSetup, defineTheme, oneDark, plainText, tokenRule, tokenStyles, tokenInspector } from '../dist/index.js'
+    import { javascript } from '../dist/languages/javascript.js'
+    import { oneLight } from '../dist/themes/one-light.js'
+    import { jonalang, jonalangSample } from './jonalang.js'
+    import { sampleCode } from './sample.js'
+
+    // A custom theme, derived from One Dark.
+    const midnight = defineTheme({
+      name: 'midnight',
+      extends: oneDark,
+      colors: { background: '#0d1117', gutterBackground: '#0d1117', activeLine: '#161b22', selection: '#264f78' },
+      tokens: { keyword: { color: '#ff7b72', fontWeight: 'bold' }, string: '#a5d6ff', function: '#d2a8ff', type: '#ffa657' },
+    })
+
+    const languages = { javascript, jonalang, text: plainText }
+    const samples = { javascript: sampleCode, jonalang: jonalangSample, text: 'Só texto, sem destaque de sintaxe.\n' }
+    const themes = { oneDark, oneLight, midnight }
+    const $ = (id) => document.getElementById(id)
+
+    // Textos da interface (painel de busca, barra de toque) em português.
+    const phrases = {
+      Find: 'Buscar', Replace: 'Substituir', 'Replace all': 'Substituir tudo', 'Match case': 'Diferenciar maiúsculas',
+      'Whole word': 'Palavra inteira', 'Regular expression': 'Expressão regular', 'Previous match': 'Anterior',
+      'Next match': 'Próximo', 'Select all matches': 'Selecionar todos', Close: 'Fechar', 'No results': 'Nenhum resultado',
+      Invalid: 'Inválida', 'Toggle replace': 'Mostrar substituir', Copy: 'Copiar', Cut: 'Recortar', Paste: 'Colar',
+      'Select all': 'Tudo',
+    }
+    // Tokens novos sem mexer na gramática: TODO/FIXME dentro de comentários e cores hex em strings.
+    const customTokens = [
+      tokenRule({ match: /\b(TODO|FIXME)\b/, token: 'todo', inside: 'comment' }),
+      tokenRule({ match: /#[\da-f]{6}\b/i, token: 'color', inside: 'string', style: (m) => `--swatch:${m[0]}` }),
+      tokenStyles({
+        'comment todo': { color: '#282c34', background: '#e5c07b', fontStyle: 'normal', fontWeight: 'bold', borderRadius: '3px' },
+        'string color': 'box-shadow: inset 0 -3px var(--swatch)',
+      }),
+    ]
+    const extensions = (inspect) => [basicSetup(), customTokens, inspect && tokenInspector()]
+
+    const editor = createEditor($('editor'), {
+      value: sampleCode,
+      language: javascript,
+      extensions: extensions(false),
+      phrases,
+      autofocus: true,
+      placeholder: 'Comece a digitar…',
+    })
+    window.editor = editor
+
+    const updateStatus = () => {
+      const { head } = editor.selection
+      $('ln').textContent = head.line + 1
+      $('col').textContent = head.col + 1
+      $('lines').textContent = editor.doc.lineCount.toLocaleString('pt-BR')
+    }
+    editor.on('selection', updateStatus)
+    editor.on('change', updateStatus)
+    updateStatus()
+
+    $('language').onchange = (e) => {
+      const lang = e.target.value
+      editor.setOptions({ language: languages[lang], value: samples[lang] })
+      editor.focus()
+    }
+    $('theme').onchange = (e) => {
+      const theme = themes[e.target.value]
+      document.documentElement.classList.toggle('light', !theme.dark)
+      editor.setOptions({ theme })
+      editor.focus()
+    }
+    $('readonly').onchange = (e) => editor.setOptions({ readOnly: e.target.checked })
+    $('wrap').onchange = (e) => editor.setOptions({ lineWrapping: e.target.checked })
+    $('inspect').onchange = (e) => editor.setOptions({ extensions: extensions(e.target.checked) })
+    $('big').onclick = () => {
+      const t0 = performance.now()
+      const lines = sampleCode.split('\n')
+      const out = []
+      while (out.length < 100_000) out.push(...lines)
+      editor.setOptions({ language: javascript, value: out.slice(0, 100_000).join('\n') })
+      $('language').value = 'javascript'
+      requestAnimationFrame(() => {
+        $('info').textContent = `100.000 linhas carregadas em ${Math.round(performance.now() - t0)} ms · ${document.querySelectorAll('.jc-line').length} linhas no DOM`
+      })
+      editor.focus()
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+  <title>Jonacode no celular</title>
+  <link rel="icon" href="../assets/logo.svg">
+  <style>
+    :root { color-scheme: dark; --bg: #1e2127; --line: #2f343d; --text: #abb2bf; --muted: #7f848e }
+    * { box-sizing: border-box }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, sans-serif }
+    main { max-width: 760px; margin: 0 auto; padding: 16px }
+    h1 { font-size: 20px; margin: 0 0 4px }
+    h2 { font-size: 15px; margin: 24px 0 8px }
+    p { margin: 0 0 8px; color: var(--muted) }
+    .frame { border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+    .fixed { height: 320px }
+    label { display: inline-flex; gap: 6px; align-items: center; margin: 0 12px 8px 0; font-size: 14px }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Jonacode no celular</h1>
+    <p>Toque para posicionar o cursor, toque duas vezes ou segure para selecionar, arraste as alças e use a barra de copiar/colar.</p>
+
+    <h2>Editor com altura fixa</h2>
+    <label><input type="checkbox" id="wrap"> Quebra de linha</label>
+    <div class="frame fixed" id="fixed"></div>
+
+    <h2>Editor que cresce com a página</h2>
+    <p>Sem altura definida: ele cresce com o conteúdo, a rolagem é a da página e só as linhas na tela vão para o DOM.</p>
+    <div class="frame" id="auto"></div>
+    <p style="margin-top:12px">Fim da página.</p>
+  </main>
+
+  <script type="module">
+    import { createEditor, basicSetup } from '../dist/index.js'
+    import { javascript } from '../dist/languages/javascript.js'
+
+    const phrases = { Copy: 'Copiar', Cut: 'Recortar', Paste: 'Colar', 'Select all': 'Tudo' }
+    const sample = await fetch('./sample.js').then((r) => r.text())
+
+    const fixed = createEditor(document.getElementById('fixed'), {
+      value: sample, language: javascript, phrases, extensions: basicSetup(),
+    })
+    const big = Array.from({ length: 2000 }, (_, i) => `const linha${i} = soma(${i}, ${i * 2}) // linha ${i + 1}`).join('\n')
+    const auto = createEditor(document.getElementById('auto'), {
+      value: big, language: javascript, phrases, minLines: 5, extensions: basicSetup(),
+    })
+    document.getElementById('wrap').addEventListener('change', (e) => fixed.setOptions({ lineWrapping: e.target.checked }))
+    Object.assign(window, { fixed, auto })
+  </script>
+</body>
+</html>

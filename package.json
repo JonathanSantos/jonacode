@@ -1,0 +1,148 @@
+{
+  "name": "jonacode",
+  "version": "0.1.0",
+  "description": "A tiny, modular and virtualized code editor for the web. Zero dependencies, tree-shakable, themeable, works with plain HTML, React, Vue, Angular…",
+  "keywords": [
+    "code-editor",
+    "editor",
+    "syntax-highlighting",
+    "highlight",
+    "virtualized",
+    "web-component",
+    "static-highlighting",
+    "log-viewer",
+    "monarch",
+    "vscode-theme",
+    "react",
+    "vue",
+    "one-dark",
+    "ai",
+    "llm",
+    "agent-tools",
+    "diff",
+    "inline-suggestions",
+    "tree-sitter",
+    "syntax-validation",
+    "collaboration",
+    "yjs",
+    "multiplayer"
+  ],
+  "author": "Jonathan",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/jonacode.iife.min.js",
+  "jsdelivr": "./dist/jonacode.iife.min.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./languages/*": {
+      "types": "./dist/languages/*.d.ts",
+      "default": "./dist/languages/*.js"
+    },
+    "./themes/*": {
+      "types": "./dist/themes/*.d.ts",
+      "default": "./dist/themes/*.js"
+    },
+    "./element": {
+      "types": "./dist/adapters/element.d.ts",
+      "default": "./dist/adapters/element.js"
+    },
+    "./react": {
+      "types": "./dist/adapters/react.d.ts",
+      "default": "./dist/adapters/react.js"
+    },
+    "./vue": {
+      "types": "./dist/adapters/vue.d.ts",
+      "default": "./dist/adapters/vue.js"
+    },
+    "./highlight": {
+      "types": "./dist/highlight.d.ts",
+      "default": "./dist/highlight.js"
+    },
+    "./monarch": {
+      "types": "./dist/language/monarch.d.ts",
+      "default": "./dist/language/monarch.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "default": "./dist/ai/index.js"
+    },
+    "./tree-sitter": {
+      "types": "./dist/tree-sitter/index.d.ts",
+      "default": "./dist/tree-sitter/index.js"
+    },
+    "./collab": {
+      "types": "./dist/collab/index.d.ts",
+      "default": "./dist/collab/index.js"
+    },
+    "./browser": "./dist/jonacode.iife.min.js",
+    "./browser/languages": "./dist/jonacode.languages.iife.min.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "assets/logo.svg"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/bundle.js",
+    "dev": "node scripts/dev.js",
+    "docs": "node scripts/docs.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "size": "node scripts/size.js",
+    "size:check": "node scripts/size.js --check",
+    "size:update": "node scripts/size.js --update",
+    "e2e": "playwright test",
+    "e2e:chromium": "playwright test --project=chromium --project=mobile-chromium",
+    "e2e:firefox": "playwright test --project=firefox",
+    "e2e:webkit": "playwright test --project=webkit",
+    "e2e:install": "playwright install chromium firefox webkit",
+    "e2e:report": "playwright show-report",
+    "ci": "npm run typecheck && npm test && npm run build && npm run size:check && npm run e2e",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "vue": ">=3.2",
+    "web-tree-sitter": ">=0.25"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "web-tree-sitter": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "tree-sitter-bash": "^0.25.1",
+    "tree-sitter-css": "^0.25.0",
+    "tree-sitter-html": "^0.23.2",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-json": "^0.24.8",
+    "tree-sitter-typescript": "^0.23.2",
+    "typescript": "^7.0.2",
+    "vue": "^3.5.43",
+    "web-tree-sitter": "^0.27.0",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33"
+  }
+}

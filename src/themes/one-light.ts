@@ -1,0 +1,67 @@
+import { defineTheme } from '../theme/theme.ts'
+
+export const oneLightPalette = {
+  background: '#fafafa',
+  foreground: '#383a42',
+  comment: '#a0a1a7',
+  red: '#e45649',
+  orange: '#986801',
+  yellow: '#c18401',
+  green: '#50a14f',
+  cyan: '#0184bc',
+  blue: '#4078f2',
+  purple: '#a626a4',
+} as const
+
+const c = oneLightPalette
+
+/** A light companion of One Dark. */
+export const oneLight = defineTheme({
+  name: 'one-light',
+  dark: false,
+  colors: {
+    background: c.background,
+    foreground: c.foreground,
+    caret: '#526fff',
+    selection: '#e5e5e6',
+    selectionInactive: '#ececed',
+    activeLine: '#f2f2f3',
+    gutterBackground: c.background,
+    gutterForeground: '#9d9d9f',
+    gutterActiveForeground: c.foreground,
+    matchingBracket: '#0000000d',
+    matchingBracketBorder: '#b6b6b8',
+    placeholder: '#a0a1a7',
+    scrollbar: '#4e566630',
+    scrollbarHover: '#4e566660',
+  },
+  tokens: {
+    comment: { color: c.comment, fontStyle: 'italic' },
+    'comment.tag': { color: c.purple, fontStyle: 'italic' },
+    keyword: c.purple,
+    operator: c.cyan,
+    punctuation: c.foreground,
+    'punctuation.special': c.purple,
+    string: c.green,
+    'string.escape': c.cyan,
+    regexp: c.cyan,
+    number: c.orange,
+    constant: c.orange,
+    variable: c.red,
+    'variable.language': c.red,
+    'variable.parameter': c.orange,
+    property: c.red,
+    function: c.blue,
+    type: c.yellow,
+    meta: c.blue,
+    tag: c.red,
+    attribute: c.orange,
+    heading: { color: c.red, fontWeight: 'bold' },
+    emphasis: { fontStyle: 'italic' },
+    strong: { fontWeight: 'bold' },
+    link: { color: c.blue, textDecoration: 'underline' },
+    inserted: c.green,
+    deleted: c.red,
+    invalid: { color: '#ffffff', background: '#e45649' },
+  },
+})

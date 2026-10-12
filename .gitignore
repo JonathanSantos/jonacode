@@ -1,0 +1,11 @@
+node_modules
+dist
+.DS_Store
+*.log
+bench/compare/node_modules
+bench/compare/out
+
+# Playwright (e2e)
+test-results/
+playwright-report/
+e2e/.build/

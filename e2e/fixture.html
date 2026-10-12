@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jonacode e2e fixture</title>
+<style>
+  html, body { margin: 0; background: #fff; font-family: system-ui, sans-serif }
+  #app { padding: 16px }
+  /* A known monospace stack keeps metrics stable across engines. */
+  .jc-editor, .jc-static { --jc-font-family: Menlo, 'DejaVu Sans Mono', 'Liberation Mono', monospace }
+</style>
+</head>
+<body>
+<!-- Text fields around the editor: tabbable in every engine (WebKit skips buttons by default). -->
+<input id="before" aria-label="before">
+<div id="app"></div>
+<input id="after" aria-label="after">
+<script type="module">
+  import J from './.build/all.js'
+
+  window.J = J
+  const app = document.getElementById('app')
+
+  /** Waits for two animation frames (a render, then paint). */
+  window.settle = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+
+  /**
+   * Mounts an editor in a fresh host (the previous one is destroyed) and stores it on `window.ed`.
+   * `options.language` may be a language export name (`'javascript'`).
+   */
+  window.mount = (options = {}, { height = '300px', width = '640px' } = {}) => {
+    window.ed?.destroy()
+    app.replaceChildren()
+    const host = document.createElement('div')
+    host.id = 'host'
+    host.style.height = height
+    host.style.width = width
+    app.appendChild(host)
+    if (typeof options.language === 'string') options = { ...options, language: J[options.language] }
+    const ed = (window.ed = J.createEditor(host, options))
+    ed.flush()
+    return ed
+  }
+
+  /** Rendered element of a document line (null when not rendered). */
+  window.lineEl = (line, editor = window.ed) => {
+    // offsetTop, not style.top: CSS serializes huge lengths with 6 significant digits.
+    const top = editor.lineBlock(line).top
+    return [...editor.dom.querySelectorAll('.jc-line')].find((el) => el.isConnected && Math.abs(el.offsetTop - top) < 1) ?? null
+  }
+
+  const plain = (r) => ({ x: r.x, y: r.y, left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height })
+
+  /** (text node, offset) of a column inside a rendered line; at a node boundary, `before` picks the end of the previous node. */
+  const locate = (el, col, before) => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    let rest = col
+    let node
+    let last = null
+    while ((node = walker.nextNode())) {
+      if (before ? rest <= node.data.length : rest < node.data.length) return [node, rest]
+      rest -= node.data.length
+      last = node
+    }
+    return rest === 0 && last ? [last, last.data.length] : null
+  }
+
+  /**
+   * Client rect of the text `from..to` of a rendered line (measured on the DOM, not through the editor).
+   * `to` defaults to the end of the grapheme at `from`. At the end of the line: a zero-width rect after the last char.
+   */
+  window.textRect = (line, from, to, editor = window.ed) => {
+    const el = window.lineEl(line, editor)
+    if (!el) throw new Error(`line ${line} is not rendered`)
+    const text = editor.doc.line(line)
+    if (from > text.length) throw new Error(`col ${from} is past the end of line ${line}`)
+    if (!text) {
+      const r = el.getBoundingClientRect()
+      return plain({ x: r.left, y: r.top, left: r.left, top: r.top, right: r.left, bottom: r.top + editor.lineHeight, width: 0, height: editor.lineHeight })
+    }
+    const range = document.createRange()
+    if (from === text.length) {
+      // After the last char: the right edge of the last grapheme.
+      const r = window.textRect(line, window.graphemeStart(text, from), from, editor)
+      return plain({ x: r.right, y: r.top, left: r.right, top: r.top, right: r.right, bottom: r.bottom, width: 0, height: r.height })
+    }
+    to ??= window.graphemeEnd(text, from)
+    range.setStart(...locate(el, from, false))
+    range.setEnd(...locate(el, to, true))
+    return plain(range.getBoundingClientRect())
+  }
+
+  /** Client rect of the character (grapheme) at `col`; a zero-width rect at the end of the line. */
+  window.charRect = (line, col, editor = window.ed) => window.textRect(line, col, undefined, editor)
+
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+  /** Grapheme boundaries of a string (0 and its length included). */
+  window.graphemes = (text) => [...[...segmenter.segment(text)].map((s) => s.index), text.length]
+  window.graphemeEnd = (text, col) => window.graphemes(text).find((b) => b > col) ?? text.length
+  window.graphemeStart = (text, col) => window.graphemes(text).filter((b) => b < col).pop() ?? 0
+
+  /** Client rect of the main (visible) caret. */
+  window.caretRect = (editor = window.ed) => {
+    const el = [...editor.dom.querySelectorAll('.jc-cursor')].find((c) => c.style.display !== 'none' && !c.classList.contains('jc-cursor-secondary'))
+    return plain(el.getBoundingClientRect())
+  }
+
+  /** `n` numbered lines of code, built in the page (fast even for millions). */
+  window.numberedLines = (n) => {
+    const lines = new Array(n)
+    for (let i = 0; i < n; i++) lines[i] = `const line${i + 1} = compute(${i}, ${i * 2}) // ${i + 1}`
+    return lines.join('\n')
+  }
+
+  /**
+   * A gate for fake async sources (AI suggestions, inline edits): `await gate.wait(i)` resolves once
+   * `gate.step()` was called more than `i` times, so a test decides when each streamed chunk arrives.
+   */
+  window.makeGate = () => {
+    let open = 0
+    const waiters = []
+    return {
+      step() {
+        open++
+        for (const w of waiters.splice(0)) w()
+      },
+      wait(i) {
+        return new Promise((resolve) => {
+          const check = () => (open > i ? resolve() : waiters.push(check))
+          check()
+        })
+      },
+    }
+  }
+
+  window.fixtureReady = true
+</script>
+</body>
+</html>

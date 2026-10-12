@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jonacode — documentação</title>
+<meta name="description" content="Jonacode: editor de código leve, modular e virtualizado para a web. Como usar e como funciona por dentro.">
+<link rel="icon" href="@favicon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=JetBrains+Mono:wght@400..700&family=Martian+Mono:wdth,wght@75..112.5,400..800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<!-- @style -->
+</head>
+<body>
+<div class="topbar">
+  <button type="button" id="menu" aria-controls="side" aria-expanded="false">Menu</button>
+  <span class="brand-name">Jonacode</span>
+</div>
+
+<div class="shell">
+  <aside class="side" id="side">
+    <a class="brand" href="#inicio">
+      <span style="width:38px;height:38px;display:block"><!-- @logo --></span>
+      <span><span class="brand-name">Jonacode</span><span class="brand-ver">v0.1.0 · MIT</span></span>
+    </a>
+
+    <svg class="jnav intro" viewBox="52 40 164 180" aria-label="Capítulos" role="img">
+      <rect class="bar" data-go="inicio" x="62" y="52" width="50" height="22" rx="11" fill="#c678dd" style="color:#c678dd;animation-delay:.05s"><title>Início</title></rect>
+      <rect class="bar" data-go="comecando" x="120" y="52" width="74" height="22" rx="11" fill="#61afef" style="color:#61afef;animation-delay:.12s"><title>Começando</title></rect>
+      <rect class="bar" data-go="frameworks" x="148" y="86" width="46" height="22" rx="11" fill="#98c379" style="color:#98c379;animation-delay:.19s"><title>Frameworks</title></rect>
+      <rect class="bar" data-go="temas" x="148" y="120" width="46" height="22" rx="11" fill="#d19a66" style="color:#d19a66;animation-delay:.26s"><title>Temas</title></rect>
+      <rect class="bar" data-go="linguagens" x="62" y="154" width="30" height="22" rx="11" fill="#e06c75" style="color:#e06c75;animation-delay:.33s"><title>Linguagens</title></rect>
+      <rect class="bar" data-go="por-dentro" x="148" y="154" width="46" height="22" rx="11" fill="#56b6c2" style="color:#56b6c2;animation-delay:.40s"><title>Por dentro</title></rect>
+      <rect class="bar" data-go="extensoes" x="74" y="188" width="108" height="22" rx="11" fill="#e5c07b" style="color:#e5c07b;animation-delay:.47s"><title>Extensões e API</title></rect>
+      <rect class="bar" data-go="ia" x="99" y="154" width="28" height="22" rx="11" fill="#ff7ab2" style="color:#ff7ab2;animation-delay:.54s"><title>IA</title></rect>
+      <rect class="jcaret" data-go="comparativo" x="0" y="0" width="8" height="34" rx="4" fill="#528bff"><title>Comparativo</title></rect>
+    </svg>
+
+    <nav>
+      <ul class="toc" id="toc">
+        <li><a href="#inicio" style="--c:var(--purple);--w:14px"><i></i>Início</a></li>
+        <li><a href="#comparativo" style="--c:var(--caret);--w:4px"><i></i>Comparativo</a>
+          <ul class="sub">
+            <li><a href="#comparativo/mapa">O mapa</a></li>
+            <li><a href="#comparativo/medicoes">Medições</a></li>
+            <li><a href="#comparativo/recursos">Recursos</a></li>
+            <li><a href="#comparativo/notas">Notas e pesos</a></li>
+            <li><a href="#comparativo/quando">Quando escolher cada um</a></li>
+            <li><a href="#comparativo/lacunas">Onde ainda perdemos</a></li>
+          </ul>
+        </li>
+        <li><a href="#comecando" style="--c:var(--blue);--w:22px"><i></i>Começando</a>
+          <ul class="sub">
+            <li><a href="#comecando/instalar">Instalação</a></li>
+            <li><a href="#comecando/primeiro">Primeiro editor</a></li>
+            <li><a href="#comecando/opcoes">Opções</a></li>
+            <li><a href="#comecando/api">Controlando o editor</a></li>
+            <li><a href="#comecando/estatico">Só destacar, sem editor</a></li>
+            <li><a href="#comecando/sob-demanda">Editor sob demanda</a></li>
+          </ul>
+        </li>
+        <li><a href="#frameworks" style="--c:var(--green);--w:13px"><i></i>Frameworks</a>
+          <ul class="sub">
+            <li><a href="#frameworks/adaptadores">Adaptadores</a></li>
+            <li><a href="#frameworks/formularios">Em formulários</a></li>
+          </ul>
+        </li>
+        <li><a href="#temas" style="--c:var(--orange);--w:13px"><i></i>Temas</a>
+          <ul class="sub">
+            <li><a href="#temas/como">Como funcionam</a></li>
+            <li><a href="#temas/criador">Criador de temas</a></li>
+            <li><a href="#temas/vscode">Temas do VS Code</a></li>
+            <li><a href="#temas/tokens">Tokens e variáveis</a></li>
+          </ul>
+        </li>
+        <li><a href="#linguagens" style="--c:var(--red);--w:9px"><i></i>Linguagens</a>
+          <ul class="sub">
+            <li><a href="#linguagens/prontas">Linguagens prontas</a></li>
+            <li><a href="#linguagens/regras">Estados e regras</a></li>
+            <li><a href="#linguagens/passo">O tokenizador passo a passo</a></li>
+            <li><a href="#linguagens/lab">Laboratório: crie uma linguagem</a></li>
+            <li><a href="#linguagens/aninhadas">Uma dentro da outra</a></li>
+            <li><a href="#linguagens/monarch">Gramáticas do Monaco</a></li>
+            <li><a href="#linguagens/testes">Testando gramáticas</a></li>
+            <li><a href="#linguagens/tokens-proprios">Tokens personalizados</a></li>
+          </ul>
+        </li>
+        <li><a href="#por-dentro" style="--c:var(--cyan);--w:13px"><i></i>Por dentro</a>
+          <ul class="sub">
+            <li><a href="#por-dentro/fluxo">O caminho de uma tecla</a></li>
+            <li><a href="#por-dentro/virtualizacao">Lista virtualizada</a></li>
+            <li><a href="#por-dentro/quebra">Quebra de linha</a></li>
+            <li><a href="#por-dentro/altura">Cresce com a página</a></li>
+            <li><a href="#por-dentro/milhoes">Milhões de linhas</a></li>
+            <li><a href="#por-dentro/incremental">Tokenização incremental</a></li>
+            <li><a href="#por-dentro/pintura">Pintura dos tokens</a></li>
+            <li><a href="#por-dentro/multicursor">Múltiplos cursores</a></li>
+            <li><a href="#por-dentro/entrada">Entrada de texto</a></li>
+            <li><a href="#por-dentro/acessibilidade">Leitor de tela</a></li>
+            <li><a href="#por-dentro/toque">Toque (mobile)</a></li>
+            <li><a href="#por-dentro/geometria">Geometria</a></li>
+            <li><a href="#por-dentro/fontes">Fontes e tamanhos</a></li>
+            <li><a href="#por-dentro/historico">Histórico</a></li>
+            <li><a href="#por-dentro/tree-shaking">Tree-shaking</a></li>
+          </ul>
+        </li>
+        <li><a href="#extensoes" style="--c:var(--yellow);--w:26px"><i></i>Extensões e API</a>
+          <ul class="sub">
+            <li><a href="#extensoes/anatomia">Anatomia</a></li>
+            <li><a href="#extensoes/incluidas">Extensões incluídas</a></li>
+            <li><a href="#extensoes/busca">Busca e substituição</a></li>
+            <li><a href="#extensoes/visualizador">Visualizador de logs</a></li>
+            <li><a href="#extensoes/marcacoes">Marcações</a></li>
+            <li><a href="#extensoes/zonas">Zonas e widgets</a></li>
+            <li><a href="#extensoes/diagnosticos">Diagnósticos e tooltips</a></li>
+            <li><a href="#extensoes/autocomplete">Autocomplete</a></li>
+            <li><a href="#extensoes/folding">Folding</a></li>
+            <li><a href="#extensoes/tree-sitter">Validação com tree-sitter</a></li>
+            <li><a href="#extensoes/colaboracao">Edição colaborativa</a></li>
+            <li><a href="#extensoes/exemplo">Exemplo ao vivo</a></li>
+            <li><a href="#extensoes/referencia">Referência da API</a></li>
+            <li><a href="#extensoes/atalhos">Atalhos</a></li>
+          </ul>
+        </li>
+        <li><a href="#ia" style="--c:var(--magenta);--w:10px"><i></i>IA</a>
+          <ul class="sub">
+            <li><a href="#ia/agente">Um agente, sem montar nada</a></li>
+            <li><a href="#ia/edicoes">Edições no formato da IA</a></li>
+            <li><a href="#ia/revisao">Revisão com diff</a></li>
+            <li><a href="#ia/sugestoes">Sugestões enquanto digita</a></li>
+            <li><a href="#ia/editar">Editar com IA</a></li>
+            <li><a href="#ia/navegador">Agentes de navegador</a></li>
+            <li><a href="#ia/protecoes">Proteções e verificação</a></li>
+            <li><a href="#ia/contexto">Contexto para o prompt</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="side-foot">
+      Feito por Jonathan.<br>
+      Zero dependências · ESM · TypeScript
+    </div>
+  </aside>
+
+  <main id="main">
+
+<!-- =============================================================== INÍCIO -->
+<section class="page" data-page="inicio" data-color="purple" data-title="Início">
+  <div class="hero">
+    <div class="hero-head">
+      <div class="hero-logo intro"><!-- @logo --></div>
+      <div>
+        <div class="eyebrow">jonacode <span>· editor de código para a web</span></div>
+        <h1>Um editor que cabe <em>em qualquer página</em>.</h1>
+      </div>
+    </div>
+    <p class="lead">Jonacode é um editor de código pequeno, modular e rápido: destaque de sintaxe, lista virtualizada para arquivos enormes, tema One Dark por padrão e uma API simples para criar linguagens (até inventadas). Funciona em HTML puro, React, Vue, Angular ou onde houver um <code>&lt;div&gt;</code>.</p>
+
+    <div class="live">
+      <div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">main.js</span><span class="right"><button class="btn small" id="hero-replay" type="button">Digitar de novo</button></span></div>
+      <div class="hero-editor" id="hero-editor"></div>
+      <div class="status" id="hero-status"></div>
+    </div>
+
+    <div class="install">
+      <code>npm install jonacode</code>
+      <a class="btn primary" href="#comecando">Começar</a>
+      <a class="btn" href="#por-dentro">Ver por dentro</a>
+    </div>
+    <div class="facts" id="facts"></div>
+    <a class="compare-link" href="#comparativo"><span>Como ele se compara ao CodeMirror, Monaco, Ace e outros</span><b>ver o comparativo medido →</b></a>
+  </div>
+
+  <h2>O que tem dentro</h2>
+  <p>Cada parte vive em um módulo separado. Você importa só o que usa, e o bundler descarta o resto.</p>
+  <div class="cards">
+    <a class="card" href="#por-dentro/virtualizacao" style="--c:var(--cyan);--w:40px"><h3>Lista virtualizada</h3><p>Só as linhas visíveis existem no DOM. 100 mil linhas continuam leves.</p><code>~30 nós no DOM para 100.000 linhas</code></a>
+    <a class="card" href="#linguagens" style="--c:var(--red);--w:26px"><h3>Linguagens declarativas</h3><p>Estados e regex. Sem parser generator, sem gramática TextMate.</p><code>[/"/, 'string', '@string']</code></a>
+    <a class="card" href="#temas" style="--c:var(--orange);--w:40px"><h3>Temas com CSS</h3><p>Um objeto vira variáveis CSS e classes. Herde e troque só o que quiser.</p><code>defineTheme({ extends: oneDark })</code></a>
+    <a class="card" href="#frameworks" style="--c:var(--green);--w:40px"><h3>Qualquer framework</h3><p>Web Component, React, Vue, Angular ou HTML puro sem bundler.</p><code>&lt;jona-code language="js"&gt;</code></a>
+    <a class="card" href="#extensoes" style="--c:var(--yellow);--w:90px"><h3>Extensível</h3><p>Extensões são funções que recebem o editor: atalhos, gutters e camadas.</p><code>(editor) =&gt; editor.addLayer({…})</code></a>
+    <a class="card" href="#por-dentro/multicursor" style="--c:var(--purple);--w:30px"><h3>Vários cursores</h3><p>Alt+clique, seleção em coluna e <kbd>Mod</kbd>+<kbd>D</kbd>, e todo comando age em todos os cursores.</p><code>editor.setSelections([…])</code></a>
+    <a class="card" href="#extensoes/busca" style="--c:var(--green);--w:52px"><h3>Busca e substituição</h3><p>Regex, maiúsculas e palavra inteira, com substituição que aceita <code style="font-size:12px">$1</code>.</p><code>search() · Mod-f</code></a>
+    <a class="card" href="#por-dentro/quebra" style="--c:var(--orange);--w:34px"><h3>Quebra de linha e mobile</h3><p>Quebra calculada em JS, gestos de toque, alças de seleção e teclado virtual.</p><code>lineWrapping: true</code></a>
+    <a class="card" href="#linguagens/prontas" style="--c:var(--red);--w:48px"><h3>11 linguagens prontas</h3><p>JavaScript, TypeScript, JSX, JSON, CSS, HTML, Markdown, SQL, shell e logs, uma por import.</p><code>import { html } from 'jonacode/languages/html'</code></a>
+    <a class="card" href="#por-dentro/altura" style="--c:var(--cyan);--w:24px"><h3>Cresce com a página</h3><p>Sem altura fixa, acompanha o conteúdo e continua desenhando só o que está na tela.</p><code>minLines: 5 · maxLines: 30</code></a>
+    <a class="card" href="#por-dentro/acessibilidade" style="--c:var(--green);--w:70px"><h3>Leitor de tela</h3><p>O campo escondido espelha o texto em volta do cursor, lido como um campo nativo.</p><code>Esc, Tab → sai do editor</code></a>
+    <a class="card" href="#ia" style="--c:var(--magenta);--w:44px"><h3>Pronto para IA</h3><p>Ferramentas prontas para modelos, edições no formato da IA, texto fantasma e <kbd>Mod</kbd>+<kbd>K</kbd>.</p><code>editorTools(editor)</code></a>
+    <a class="card" href="#ia/revisao" style="--c:var(--green);--w:30px"><h3>Diff e revisão</h3><p>Aceitar ou rejeitar cada trecho, ou dois editores lado a lado, alinhados.</p><code>diffView({ original })</code></a>
+    <a class="card" href="#extensoes/tree-sitter" style="--c:var(--yellow);--w:56px"><h3>Validação com tree-sitter</h3><p>Erros de sintaxe com correções e árvore sintática, em WebAssembly, só se você importar.</p><code>treeSitter({ load, grammars })</code></a>
+    <a class="card" href="#extensoes/colaboracao" style="--c:var(--cyan);--w:36px"><h3>Colaborativo</h3><p>Cursores com nome, avatares, seguir alguém e desfazer só o seu, com Yjs ou um backend seu.</p><code>collab(yjs({ Y, text, awareness }))</code></a>
+    <a class="card" href="#extensoes/zonas" style="--c:var(--purple);--w:48px"><h3>Zonas entre linhas</h3><p>Barras de ação, comentários e prévias entre as linhas, com espaço próprio.</p><code>addZone(editor, { line, content })</code></a>
+    <a class="card" href="#por-dentro/fontes" style="--c:var(--orange);--w:26px"><h3>Qualquer fonte</h3><p>Monoespaçada ou proporcional, qualquer tamanho; trocas só no CSS são medidas de novo.</p><code>fontFamily: 'Geist, sans-serif'</code></a>
+    <a class="card" href="#por-dentro/tree-shaking" style="--c:var(--blue);--w:60px"><h3>Leve de verdade</h3><p>Zero dependências, ESM, <code style="font-size:12px">sideEffects: false</code>.</p><code id="card-size">core ~16 kB gzip</code></a>
+  </div>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+
+<!-- =============================================================== COMPARATIVO -->
+<section class="page" data-page="comparativo" data-color="caret" data-title="Comparativo">
+  <div class="eyebrow">visão geral <span>· comparativo</span></div>
+  <h1>Leve <em>e</em> rápido: o espaço que faltava.</h1>
+  <p class="lead">Os editores pequenos travam com arquivos grandes, e os que aguentam arquivos grandes são pesados. O Jonacode foi feito para ficar no meio: pequeno, virtualizado, fácil de integrar e de estender. Aqui ele aparece lado a lado com CodeMirror 6, CodeMirror 5, Monaco, Ace, prism-code-editor e CodeJar. Os números foram <strong>medidos</strong> na mesma máquina, com configurações equivalentes, e as notas trazem pesos que você pode ajustar.</p>
+
+  <div class="kpis" id="kpis"></div>
+
+  <h2 id="mapa">O mapa</h2>
+  <p>Cada ponto é um editor com destaque de JavaScript e o seu "setup básico". No eixo horizontal, o tamanho do JavaScript (gzip); no vertical, o tempo até a primeira pintura de um arquivo de <strong>100 mil linhas</strong>. Os dois eixos estão em escala logarítmica, e quanto mais perto do canto inferior esquerdo, melhor.</p>
+  <figure class="chart-card">
+    <div class="chart-head"><span class="chart-title">Tamanho × tempo para abrir 100 mil linhas</span><button class="btn small" type="button" data-table-toggle="scatter">Ver tabela</button></div>
+    <div class="chart-body" id="scatter"></div>
+    <div class="chart-table" id="scatter-table" hidden></div>
+    <figcaption class="chart-note" id="bench-note"></figcaption>
+  </figure>
+
+  <h2 id="medicoes">Medido, não estimado</h2>
+  <p>Em todos os gráficos, menos é melhor. Os tempos incluem a espera do próximo quadro (~16 ms), então diferenças abaixo disso são ruído. As variantes "núcleo" mostram o custo mínimo de cada biblioteca, sem linguagem nem extensões.</p>
+  <div class="metric-tabs" role="tablist" id="metric-tabs"></div>
+  <figure class="chart-card">
+    <div class="chart-head"><span class="chart-title" id="bars-title"></span><button class="btn small" type="button" data-table-toggle="bars">Ver tabela</button></div>
+    <div class="chart-body" id="bars"></div>
+    <div class="chart-table" id="bars-table" hidden></div>
+  </figure>
+  <p class="note">Reproduza na sua máquina: <code>cd bench/compare &amp;&amp; npm install &amp;&amp; npm run bench</code>, depois <code>npm run docs</code>. A memória JS (V8) está só na tabela porque não inclui o DOM: editores que criam centenas de milhares de nós aparecem artificialmente "leves" nela.</p>
+
+  <h2 id="recursos">Recursos</h2>
+  <p><span class="sym yes">✓</span> pronto no pacote · <span class="sym part">~</span> parcial, via addon/comunidade ou com ressalvas · <span class="sym no">✗</span> ausente.</p>
+  <div class="table-wrap"><table class="matrix" id="matrix"></table></div>
+
+  <h2 id="notas">Notas e pesos <span class="tag">ajustável</span></h2>
+  <p>Cada critério recebe uma nota de 0 a 10. Tamanho e desempenho vêm das medições; os demais são avaliação nossa, e estão abertos na tabela logo abaixo. O peso de cada critério depende do seu projeto: escolha um perfil ou mexa nos controles e veja o ranking se reorganizar.</p>
+  <div class="presets" id="score-presets"></div>
+  <div class="scores">
+    <div class="panel weights" id="weights"></div>
+    <figure class="chart-card" style="margin:0">
+      <div class="chart-head"><span class="chart-title" id="score-title">Nota ponderada (0–10)</span><label class="muted mono proj"><input type="checkbox" id="projection"> projeção pós-roadmap</label></div>
+      <div class="chart-body ranking" id="ranking"></div>
+    </figure>
+  </div>
+  <details class="details">
+    <summary>Ver as notas por critério</summary>
+    <div class="table-wrap"><table class="matrix scores-table" id="score-table"></table></div>
+  </details>
+
+  <h2 id="quando">Quando escolher cada um</h2>
+  <div class="choose" id="choose"></div>
+
+  <h2 id="lacunas">Onde ainda perdemos</h2>
+  <p>O núcleo técnico já compete com os grandes; o que falta é maturidade. Nas últimas rodadas entraram 11 linguagens prontas (com aninhamento), o editor que cresce com a página, o leitor de tela, a validação no Android, o destaque estático que vira editor sob demanda, o visualizador de logs, mais de 1 milhão de linhas, o campo de formulário nativo, os importadores de temas do VS Code e de gramáticas do Monaco, o laboratório com testes de gramática, marcações, tooltips, diagnósticos, autocomplete, folding e busca em várias linhas, o <a href="#ia">capítulo de IA</a> (ferramentas para agentes, edições no formato da IA, diff com revisão, texto fantasma e Ctrl/⌘+K), a <a href="#extensoes/tree-sitter">validação com tree-sitter</a> (árvore sintática e seleção por estrutura), a <a href="#extensoes/colaboracao">edição colaborativa</a> com Yjs, as <a href="#extensoes/zonas">zonas entre linhas</a>, o suporte a <a href="#por-dentro/fontes">qualquer fonte</a> e mais de 400 testes de interface em Chromium, Firefox e WebKit, que já acharam e corrigiram 15 bugs. Estas são as lacunas que sobram, na ordem em que pretendemos atacá-las:</p>
+  <ol class="roadmap">
+    <li><b>Confiabilidade.</b> Validação no iOS; teste com NVDA, VoiceOver e TalkBack; CI rodando no GitHub e publicação no npm.</li>
+    <li><b>Linguagem de verdade.</b> Integração com LSP (em um worker) para autocomplete, diagnósticos e tooltips com tipos; folding pela árvore do tree-sitter.</li>
+    <li><b>Escrita.</b> Texto da direita para a esquerda (RTL e bidirecional).</li>
+  </ol>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== COMEÇANDO -->
+<section class="page" data-page="comecando" data-color="blue" data-title="Começando">
+  <div class="eyebrow">capítulo 2 <span>· começando</span></div>
+  <h1>Do zero ao editor em <em>três linhas</em>.</h1>
+  <p class="lead">Instale, importe e passe um elemento. Linguagem, tema e extensões são opcionais e independentes.</p>
+
+  <h2 id="instalar">Instalação</h2>
+  <div class="tabs">
+    <div class="tablist" role="tablist">
+      <button role="tab" aria-selected="true">npm</button>
+      <button role="tab">CDN (ESM)</button>
+      <button role="tab">&lt;script&gt; clássico</button>
+    </div>
+    <div class="tabpanel" role="tabpanel">
+      <textarea class="snippet" data-lang="shell" data-file="terminal">npm install jonacode
+# ou
+pnpm add jonacode
+yarn add jonacode</textarea>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <textarea class="snippet" data-lang="html" data-file="index.html"><div id="app" style="height: 400px"></div>
+
+<script type="module">
+  import { createEditor, basicSetup } from 'https://esm.sh/jonacode'
+  import { javascript } from 'https://esm.sh/jonacode/languages/javascript'
+
+  createEditor(document.getElementById('app'), {
+    value: 'console.log("olá")',
+    language: javascript,
+    extensions: basicSetup(),
+  })
+</script></textarea>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <textarea class="snippet" data-lang="html" data-file="index.html"><!-- Um único arquivo, expõe a global `Jonacode` -->
+<script src="https://cdn.jsdelivr.net/npm/jonacode/dist/jonacode.iife.min.js"></script>
+
+<div id="app" style="height: 400px"></div>
+<script>
+  const { createEditor, basicSetup, javascript } = Jonacode
+  createEditor(document.getElementById('app'), {
+    language: javascript,
+    extensions: basicSetup(),
+  })
+</script></textarea>
+    </div>
+  </div>
+
+  <h2 id="primeiro">Primeiro editor</h2>
+  <p>O editor ocupa a altura do elemento pai. Dê uma altura ao container (e o editor passa a rolar e a virtualizar) ou deixe sem altura para ele crescer com o conteúdo.</p>
+  <textarea class="snippet" data-lang="js" data-file="main.js">import { createEditor, basicSetup } from 'jonacode'
+import { javascript } from 'jonacode/languages/javascript'
+
+const editor = createEditor(document.querySelector('#app'), {
+  value: 'const saudacao = "Olá, mundo!"',
+  language: javascript,        // opcional: sem ela, texto puro
+  extensions: basicSetup(),    // números de linha, colchetes, atalhos…
+})
+
+editor.on('change', () => console.log(editor.getValue()))</textarea>
+  <p class="note">Sem <code>theme</code>, o editor usa o <strong>One Dark</strong>. Sem <code>extensions</code>, você tem um editor enxuto: digitação, seleção, clipboard, desfazer/refazer e navegação por teclado.</p>
+
+  <h3><code>basicSetup()</code> por dentro</h3>
+  <p>É só uma lista de extensões, e qualquer uma pode ser desligada:</p>
+  <textarea class="snippet" data-lang="js">basicSetup({
+  lineNumbers: true,          // gutter com números de linha
+  highlightActiveLine: true,  // fundo na linha do cursor
+  bracketMatching: true,      // destaca o par de ( [ {
+  closeBrackets: true,        // fecha ( [ { " ' ` automaticamente
+  editingKeymap: true,        // Mod-/, Alt-↑↓, Mod-Shift-K…
+  multiCursor: true,          // Alt+clique, Mod-D, seleção em coluna
+  search: true,               // Mod-F: busca e substituição
+  gotoLine: true,             // Ctrl-G: ir para a linha
+  touch: true,                // gestos, alças de seleção e barra copiar/colar
+})
+
+// equivalente a importar cada uma:
+import { lineNumbers, highlightActiveLine, bracketMatching, closeBrackets, keymap, editingKeymap,
+  multiCursor, search, gotoLine, touch } from 'jonacode'
+const extensions = [lineNumbers(), highlightActiveLine(), bracketMatching(), closeBrackets(),
+  keymap(editingKeymap), multiCursor(), search(), gotoLine(), touch()]</textarea>
+
+  <h2 id="opcoes">Opções</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Opção</th><th>Tipo</th><th>Padrão</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>value</code></td><td>string</td><td><code>''</code></td><td>Conteúdo inicial.</td></tr>
+      <tr><td><code>language</code></td><td>Language</td><td>texto puro</td><td>Linguagem para o destaque de sintaxe.</td></tr>
+      <tr><td><code>theme</code></td><td>Theme</td><td><code>oneDark</code></td><td>Tema de cores.</td></tr>
+      <tr><td><code>extensions</code></td><td>Extension</td><td>—</td><td>Função, lista ou listas aninhadas de extensões.</td></tr>
+      <tr><td><code>tabSize</code></td><td>number</td><td><code>2</code></td><td>Largura do tab e da unidade de indentação.</td></tr>
+      <tr><td><code>insertSpaces</code></td><td>boolean</td><td><code>true</code></td><td>Indentar com espaços (ou com tab).</td></tr>
+      <tr><td><code>readOnly</code></td><td>boolean</td><td><code>false</code></td><td>Bloqueia edições do usuário (a API continua podendo editar).</td></tr>
+      <tr><td><code>lineWrapping</code></td><td>boolean</td><td><code>false</code></td><td>Quebra linhas longas na largura do editor (sem rolagem horizontal).</td></tr>
+      <tr><td><code>minLines</code> · <code>maxLines</code></td><td>number</td><td>—</td><td>Altura mínima e máxima em linhas. Sem altura no elemento pai, o editor cresce com o conteúdo (e continua virtualizado); passando de <code>maxLines</code>, rola por dentro.</td></tr>
+      <tr><td><code>phrases</code></td><td>Record</td><td>—</td><td>Traduções dos textos de interface (busca, barra de toque): <code>{ Find: 'Buscar' }</code>.</td></tr>
+      <tr><td><code>placeholder</code></td><td>string</td><td>—</td><td>Texto mostrado quando o documento está vazio.</td></tr>
+      <tr><td><code>fontSize</code> · <code>fontFamily</code> · <code>lineHeight</code></td><td>number | string</td><td>14 · JetBrains Mono… · 1.6</td><td>Tipografia (vira variável CSS). Qualquer fonte, inclusive proporcional; veja <a href="#por-dentro/fontes">fontes e tamanhos</a>.</td></tr>
+      <tr><td><code>autofocus</code></td><td>boolean</td><td><code>false</code></td><td>Foca ao criar.</td></tr>
+      <tr><td><code>onChange</code></td><td>(value, event) =&gt; void</td><td>—</td><td>Chamado a cada mudança com o novo valor.</td></tr>
+      <tr><td><code>className</code> · <code>ariaLabel</code></td><td>string</td><td>—</td><td>Classe extra na raiz e rótulo acessível.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Tudo pode mudar depois com <code>editor.setOptions({ ... })</code>, inclusive <code>language</code>, <code>theme</code> e <code>extensions</code>.</p>
+
+  <h2 id="api">Controlando o editor</h2>
+  <p>Clique nos botões: cada um executa o código mostrado ao lado no editor abaixo.</p>
+  <div class="row" id="api-buttons"></div>
+  <div class="live" style="margin-top:14px">
+    <div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title" id="api-last">editor.getValue()</span></div>
+    <div id="api-editor" style="height:230px"></div>
+  </div>
+
+  <h2 id="estatico">Só destacar, sem editor <span class="tag">SSR</span></h2>
+  <p>Para blocos de código que ninguém vai editar (um blog, uma página de documentação), você não precisa do editor. <code>highlight()</code> usa as mesmas gramáticas e temas e devolve uma string de HTML, sem tocar no DOM: roda no servidor, num gerador de site estático ou no navegador.</p>
+  <div class="grid2">
+    <textarea class="snippet" data-lang="js" data-file="build.js">// No servidor (Node, Deno, Bun…) ou no navegador
+import { highlight, highlightStyles } from 'jonacode/highlight'
+import { javascript } from 'jonacode/languages/javascript'
+import { oneDark } from 'jonacode/themes/one-dark'
+
+const html = highlight(codigo, javascript, {
+  theme: oneDark,
+  lineNumbers: true,   // números com contadores CSS: não vão junto na cópia
+})
+const css = highlightStyles(oneDark) // uma vez por página</textarea>
+    <textarea class="snippet" data-lang="js" data-file="blog.js">// Ou destaque os <pre><code class="language-js"> que já estão na página,
+// como o Prism e o highlight.js fazem:
+import { highlightAll } from 'jonacode/highlight'
+import { javascript } from 'jonacode/languages/javascript'
+import { css } from 'jonacode/languages/css'
+
+highlightAll({ languages: [javascript, css], theme: oneDark })</textarea>
+  </div>
+  <p class="note">Só o destacador, com JavaScript e o One Dark, pesa <strong id="static-size">~6 kB</strong> gzip, sem nada do editor.</p>
+
+  <h2 id="sob-demanda">Editor sob demanda <span class="tag">ao vivo</span></h2>
+  <p>Uma página com muitos trechos editáveis não precisa pagar por todos os editores de uma vez. <code>lazyEditor()</code> mostra o destaque estático e só cria o editor no primeiro clique, toque ou foco (ou quando o bloco entra na tela, ou quando o navegador fica ocioso). O bloco estático tem <strong>a mesma geometria do editor</strong>: margens, altura de linha e números de linha. A troca acontece sem nada se mexer, e o cursor cai onde você clicou.</p>
+  <textarea class="snippet" data-lang="js">import { lazyEditor, basicSetup } from 'jonacode'
+
+// Reaproveita o HTML de highlight() vindo do servidor, ou gera aqui mesmo
+const trecho = lazyEditor(el, { value, language: javascript, extensions: basicSetup() })
+// on: 'interaction' (padrão) | 'visible' | 'idle'
+const editor = await trecho.ready  // quando alguém interagir
+
+// No Web Component: <jona-code lazy>…</jona-code></textarea>
+  <div class="row" style="margin:14px 0 10px">
+    <button class="btn small" id="lazy-eager" type="button">Montar 24 editores</button>
+    <button class="btn small primary" id="lazy-lazy" type="button">Montar 24 sob demanda</button>
+    <span class="muted mono" style="font-size:12px">depois clique em qualquer bloco</span>
+  </div>
+  <div class="meters">
+    <div class="meter"><b id="lazy-time">—</b><span>ms para montar</span></div>
+    <div class="meter"><b id="lazy-nodes">—</b><span>elementos no DOM</span></div>
+    <div class="meter"><b id="lazy-count">0</b><span>editores criados</span></div>
+    <div class="meter"><b id="lazy-mode">—</b><span>modo</span></div>
+  </div>
+  <div class="lazy-grid" id="lazy-grid"></div>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== FRAMEWORKS -->
+<section class="page" data-page="frameworks" data-color="green" data-title="Frameworks">
+  <div class="eyebrow">capítulo 3 <span>· frameworks</span></div>
+  <h1>Um núcleo, <em>vários sabores</em>.</h1>
+  <p class="lead">O núcleo é DOM puro. Os adaptadores são arquivos pequenos e separados: você só paga pelo que importar.</p>
+
+  <h2 id="adaptadores" class="sr-only">Adaptadores</h2>
+  <div class="tabs">
+    <div class="tablist" role="tablist">
+      <button role="tab" aria-selected="true">Web Component</button>
+      <button role="tab">React</button>
+      <button role="tab">Vue</button>
+      <button role="tab">Angular</button>
+      <button role="tab">Svelte</button>
+      <button role="tab">HTML puro</button>
+    </div>
+    <div class="tabpanel" role="tabpanel">
+      <p>O <code>&lt;jona-code&gt;</code> funciona em qualquer lugar que renderize HTML. Nada é registrado até você chamar <code>defineJonacodeElement()</code>, e o conteúdo inicial vem do próprio elemento.</p>
+      <textarea class="snippet" data-lang="html" data-file="index.html"><jona-code language="javascript" style="height: 200px">
+  function soma(a, b) {
+    return a + b
+  }
+</jona-code>
+
+<script type="module">
+  import { defineJonacodeElement, basicSetup } from 'jonacode/element'
+  import { javascript } from 'jonacode/languages/javascript'
+  import { oneLight } from 'jonacode/themes/one-light'
+
+  defineJonacodeElement({
+    languages: [javascript],   // escolhidas pelo atributo language=""
+    themes: [oneLight],        // escolhidos pelo atributo theme=""
+    extensions: basicSetup(),
+  })
+
+  document.querySelector('jona-code').addEventListener('change', (e) => {
+    console.log(e.detail.value)
+  })
+</script></textarea>
+      <p>Ao vivo, logo abaixo, um <code>&lt;jona-code&gt;</code> de verdade:</p>
+      <jona-code class="demo" language="javascript">
+        // Eu sou um &lt;jona-code&gt; — edite à vontade
+        const frameworks = ['React', 'Vue', 'Angular', 'Svelte']
+        frameworks.forEach((nome) => console.log(`${nome} ✓`))
+      </jona-code>
+      <p class="note" id="element-out">Atributos: <code>language</code>, <code>theme</code>, <code>readonly</code>, <code>line-wrapping</code>, <code>placeholder</code>, <code>tab-size</code>, <code>font-size</code>, <code>min-lines</code>, <code>max-lines</code>, <code>name</code>, <code>required</code> e <code>lazy</code>. Propriedades: <code>value</code>, <code>editor</code>, <code>language</code>, <code>theme</code>, <code>extensions</code>.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <textarea class="snippet" data-lang="jsx" data-file="App.jsx">import { useState } from 'react'
+import { CodeEditor } from 'jonacode/react'
+import { basicSetup } from 'jonacode'
+import { javascript } from 'jonacode/languages/javascript'
+
+// Fora do componente: extensões estáveis não são reinstaladas a cada render
+const extensions = basicSetup()
+
+export function App() {
+  const [code, setCode] = useState('const a = 1')
+
+  return (
+    <CodeEditor
+      value={code}
+      onChange={setCode}
+      language={javascript}
+      extensions={extensions}
+      style={{ height: 400 }}
+      onReady={(editor) => editor.focus()}
+    />
+  )
+}</textarea>
+      <p class="note">Controlado (<code>value</code>) ou não controlado (<code>defaultValue</code>). O <code>ref</code> aponta para a instância do <code>Editor</code>.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <textarea class="snippet" data-lang="html" data-file="App.vue"><script setup>
+import { ref } from 'vue'
+import { CodeEditor } from 'jonacode/vue'
+import { basicSetup } from 'jonacode'
+import { javascript } from 'jonacode/languages/javascript'
+
+const code = ref('const a = 1')
+const extensions = basicSetup()
+</script>
+
+<template>
+  <CodeEditor
+    v-model="code"
+    :language="javascript"
+    :extensions="extensions"
+    style="height: 400px"
+    @ready="(editor) => editor.focus()"
+  />
+</template></textarea>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <p>No Angular, use o Web Component. Registre-o uma vez e libere elementos customizados no componente:</p>
+      <textarea class="snippet" data-lang="ts" data-file="main.ts">import { defineJonacodeElement, basicSetup } from 'jonacode/element'
+import { javascript } from 'jonacode/languages/javascript'
+
+defineJonacodeElement({ languages: [javascript], extensions: basicSetup() })</textarea>
+      <textarea class="snippet" data-lang="ts" data-file="editor.component.ts">import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core'
+
+@Component({
+  selector: 'app-editor',
+  standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: `
+    <jona-code language="javascript" style="height: 400px"
+      [value]="code" (change)="code = $event.detail.value"></jona-code>
+  `,
+})
+export class EditorComponent {
+  code = 'const a = 1'
+}</textarea>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <textarea class="snippet" data-lang="html" data-file="Editor.svelte"><script>
+  import { onMount } from 'svelte'
+  import { createEditor, basicSetup } from 'jonacode'
+  import { javascript } from 'jonacode/languages/javascript'
+
+  let { value = $bindable('') } = $props()
+  let host
+
+  onMount(() => {
+    const editor = createEditor(host, {
+      value,
+      language: javascript,
+      extensions: basicSetup(),
+      onChange: (v) => (value = v),
+    })
+    return () => editor.destroy()
+  })
+</script>
+
+<div bind:this={host} style="height: 400px"></div></textarea>
+      <p class="note">A mesma receita de <code>onMount</code> + <code>destroy()</code> serve para Solid, Lit, Qwik e afins.</p>
+    </div>
+    <div class="tabpanel" role="tabpanel" hidden>
+      <p>Sem bundler, sem build. Os arquivos em <code>dist/</code> são ESM puro, um por módulo, e o navegador resolve os imports sozinho:</p>
+      <textarea class="snippet" data-lang="html" data-file="index.html"><script type="importmap">
+  { "imports": { "jonacode/": "./node_modules/jonacode/dist/" } }
+</script>
+
+<div id="app" style="height: 100vh"></div>
+
+<script type="module">
+  import { createEditor, basicSetup } from 'jonacode/index.js'
+  import { javascript } from 'jonacode/languages/javascript.js'
+
+  createEditor(document.getElementById('app'), {
+    language: javascript,
+    extensions: basicSetup(),
+  })
+</script></textarea>
+    </div>
+  </div>
+
+  <h2 id="formularios">Em formulários <span class="tag">ao vivo</span></h2>
+  <p>O <code>&lt;jona-code&gt;</code> é um elemento <em>associado a formulário</em>, como um <code>&lt;textarea&gt;</code>. Com um <code>name</code>, ele vai junto no envio; <code>form.reset()</code> volta ao conteúdo inicial; <code>required</code> participa da validação; um <code>&lt;fieldset disabled&gt;</code> o deixa só leitura (e fora do envio); e um <code>&lt;label for&gt;</code> dá nome a ele e o foca. Tente enviar vazio:</p>
+  <div class="grid2">
+    <form class="panel form-demo" id="form-demo">
+      <fieldset id="form-fieldset">
+        <label for="form-code">Consulta SQL</label>
+        <jona-code id="form-code" name="consulta" language="sql" required min-lines="4" max-lines="10">SELECT id, nome FROM clientes WHERE ativo = true</jona-code>
+      </fieldset>
+      <div class="row" style="margin-top:12px">
+        <button class="btn small primary" type="submit">Enviar</button>
+        <button class="btn small" type="reset">Restaurar</button>
+        <label class="muted mono" style="font-size:12px;display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="form-disable"> desabilitar o fieldset</label>
+      </div>
+    </form>
+    <div class="log" id="form-log" aria-live="polite"></div>
+  </div>
+  <textarea class="snippet" data-lang="html"><form method="post" action="/consultas">
+  <label for="sql">Consulta</label>
+  <jona-code id="sql" name="consulta" language="sql" required lazy></jona-code>
+  <button>Enviar</button>   <!-- FormData: { consulta: "SELECT …" } -->
+</form></textarea>
+  <p class="note">Também há <code>validity</code>, <code>checkValidity()</code>, <code>reportValidity()</code> e <code>setCustomValidity()</code>, como em qualquer campo. Em documentos enormes o valor do formulário é atualizado com atraso de 300 ms, para não montar o texto inteiro a cada tecla.</p>
+
+  <h2>Ciclo de vida</h2>
+  <ul class="list">
+    <li>Criar: <code>createEditor(elemento, opções)</code> monta o DOM do editor <em>dentro</em> do elemento.</li>
+    <li>Atualizar: <code>editor.setOptions()</code> troca linguagem, tema, extensões, readOnly e fonte sem recriar nada.</li>
+    <li>Destruir: <code>editor.destroy()</code> remove o DOM, observers e listeners. Os adaptadores fazem isso por você.</li>
+    <li>Shadow DOM: os estilos são injetados no <code>document</code> ou na <code>ShadowRoot</code> onde o editor estiver.</li>
+  </ul>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== TEMAS -->
+<section class="page" data-page="temas" data-color="orange" data-title="Temas">
+  <div class="eyebrow">capítulo 4 <span>· temas</span></div>
+  <h1>Um objeto vira <em>CSS</em>.</h1>
+  <p class="lead">Um tema é um objeto com cores da interface e estilos de tokens. O Jonacode compila esse objeto para uma folha de estilos com escopo: cores viram variáveis CSS e tokens viram classes.</p>
+
+  <h2 id="como">Como funcionam</h2>
+  <textarea class="snippet" data-lang="js" data-file="meu-tema.js">import { defineTheme, oneDark } from 'jonacode'
+
+export const meuTema = defineTheme({
+  name: 'meu-tema',
+  extends: oneDark,                  // herda tudo e troca só o que quiser
+  colors: { background: '#0d1117', selection: '#264f78' },
+  tokens: {
+    keyword: { color: '#ff7b72', fontWeight: 'bold' },
+    string: '#a5d6ff',
+    'string.escape': '#79c0ff',      // escopos com ponto têm fallback
+  },
+})</textarea>
+  <p>Vira algo assim, injetado uma única vez no documento:</p>
+  <textarea class="snippet" data-lang="css" data-file="gerado automaticamente">.jc-theme-meu-tema {
+  color-scheme: dark;
+  --jc-bg: #0d1117;
+  --jc-selection: #264f78;
+  /* …todas as cores da interface… */
+}
+.jc-theme-meu-tema .jc-t-keyword { color: #ff7b72; font-weight: bold }
+.jc-theme-meu-tema .jc-t-string { color: #a5d6ff }
+.jc-theme-meu-tema .jc-t-string-escape { color: #79c0ff }</textarea>
+
+  <h3>Fallback de escopos</h3>
+  <p>Um token <code>string.escape</code> recebe as classes <code>jc-t-string</code> e <code>jc-t-string-escape</code>. Se o tema só define <code>string</code>, a cascata do CSS cuida do resto. Veja a regra vencedora para cada token:</p>
+  <div class="panel cascade" id="cascade"></div>
+
+  <h2 id="criador">Criador de temas <span class="tag">ao vivo</span></h2>
+  <p>Escolha um ponto de partida e mexa nas cores. O código ao lado é o que você colaria no seu projeto.</p>
+  <div class="presets" id="presets"></div>
+  <div class="builder">
+    <div class="panel picker" id="picker"></div>
+    <div style="display:grid;gap:14px;min-width:0">
+      <div class="live"><div id="theme-editor" style="height:250px"></div></div>
+      <div class="code" style="margin:0"><div class="code-bar"><span class="file">meu-tema.js</span><button class="copy" type="button" id="theme-copy">copiar</button></div><div id="theme-code"></div></div>
+    </div>
+  </div>
+
+  <h2 id="vscode">Temas do VS Code <span class="tag">ao vivo</span></h2>
+  <p>Existem milhares de temas para o VS Code. <code>fromVSCodeTheme()</code> lê o JSON de um deles (o arquivo <code>*-color-theme.json</code>, com comentários e vírgulas sobrando) e devolve um tema do Jonacode: as cores da interface vêm de <code>colors</code> e as dos tokens de <code>tokenColors</code>. Os escopos TextMate são resolvidos como no VS Code: o seletor mais específico que é prefixo do escopo vence. Comparado caractere a caractere com o próprio VS Code, nos 19 temas que vêm com ele, <strong>75% do texto sai com a mesma cor</strong> (82% no Dark+); o resto vem de regras por linguagem que um mapeamento de uma cor por tipo não reproduz (o teto medido é 77%). Edite o JSON à esquerda ou cole o seu:</p>
+  <div class="grid2">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">meu-tema-color-theme.json</span><span class="right mono" id="vsc-status"></span></div><div id="vsc-json" style="height:380px"></div></div>
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">resultado.ts</span></div><div id="vsc-preview" style="height:380px"></div></div>
+  </div>
+  <textarea class="snippet" data-lang="js">import { fromVSCodeTheme } from 'jonacode/themes/vscode'
+import tema from './dracula-color-theme.json'   // ou o texto do arquivo
+
+createEditor(el, { theme: fromVSCodeTheme(tema) })
+
+// Temas que usam "include" (como os padrões do VS Code): diga onde achar o arquivo incluído
+fromVSCodeTheme(texto, { include: (caminho) => arquivos[caminho] })</textarea>
+
+  <h2 id="tokens">Tokens e variáveis</h2>
+  <p>Linguagens emitem tokens com nomes em escopos. Estes são os que os temas embutidos estilizam, e sua linguagem pode inventar outros:</p>
+  <div class="table-wrap"><table id="token-table">
+    <thead><tr><th>Token</th><th>Exemplo</th><th>One Dark</th></tr></thead><tbody></tbody>
+  </table></div>
+  <p>E estas são as variáveis CSS de interface. Você pode sobrescrever qualquer uma direto no CSS:</p>
+  <textarea class="snippet" data-lang="css" data-file="app.css">/* Mais específico que .jc-theme-*: basta prefixar com sua classe */
+.meu-app .jc-editor {
+  --jc-bg: #1e1e2e;
+  --jc-caret: #f5c2e7;
+  --jc-font-size: 15px;
+  --jc-line-height: 1.7;
+  --jc-font-family: 'Fira Code', monospace;
+}</textarea>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Variável</th><th>Cor do tema</th></tr></thead>
+    <tbody id="var-table"></tbody>
+  </table></div>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== LINGUAGENS -->
+<section class="page" data-page="linguagens" data-color="red" data-title="Linguagens">
+  <div class="eyebrow">capítulo 5 <span>· linguagens</span></div>
+  <h1>Estados, regex e <em>nada mais</em>.</h1>
+  <p class="lead">Uma linguagem é uma máquina de estados declarativa. Cada estado tem uma lista ordenada de regras: uma regex e o token que ela produz. Regras podem empilhar, desempilhar ou trocar de estado, e é assim que comentários de várias linhas e template strings aninhadas funcionam.</p>
+
+  <h2 id="prontas">Linguagens prontas <span class="tag">ao vivo</span></h2>
+  <p>Onze linguagens vêm com a biblioteca, cada uma em seu próprio módulo: importe só as que usar. O HTML já traz JavaScript e CSS dentro, e o Markdown colore os blocos de código com as linguagens que você passar. Escolha uma e edite à vontade:</p>
+  <div class="langs-demo">
+    <div class="presets" id="langs-tabs" role="tablist" aria-label="Linguagens prontas"></div>
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title" id="langs-file">exemplo</span><span class="right mono" id="langs-meta"></span></div><div class="host" id="langs-editor"></div></div>
+  </div>
+  <div class="table-wrap" style="margin-top:16px"><table id="langs-table"></table></div>
+  <textarea class="snippet" data-lang="js" data-file="main.js">import { createEditor, basicSetup } from 'jonacode'
+import { html } from 'jonacode/languages/html'         // já traz JavaScript e CSS
+import { typescript } from 'jonacode/languages/typescript'
+import { createMarkdown } from 'jonacode/languages/markdown'
+
+createEditor(el, { language: html, extensions: basicSetup() })
+
+// Markdown com cor nos blocos ```ts e ```html
+const markdown = createMarkdown({ codeLanguages: [typescript, html] })</textarea>
+  <p class="note">Sem bundler, o arquivo <code>dist/jonacode.languages.iife.min.js</code> (~10 kB gzip) acrescenta todas ao global <code>Jonacode</code>, reaproveitando o núcleo do <code>jonacode.iife.min.js</code>.</p>
+
+  <h2 id="regras">Estados e regras</h2>
+  <textarea class="snippet" data-lang="js" data-file="ini.js">import { defineLanguage } from 'jonacode'
+
+export const ini = defineLanguage({
+  name: 'ini',
+  comments: { line: ';' },            // usado por Mod-/
+  states: {
+    root: [
+      // forma compacta: [regex, token, ação]
+      [/;.*/, 'comment'],
+      [/^\[.*\]/, 'keyword'],
+      // um token por grupo de captura
+      [/^([\w.]+)(\s*)(=)/, ['property', null, 'operator']],
+      [/"/, 'string', '@string'],     // '@nome' empilha um estado
+      [/\d+/, 'number'],
+    ],
+    string: [
+      [/\\./, 'string.escape'],
+      [/"/, 'string', '@pop'],        // '@pop' volta ao estado anterior
+      [/[^"\\]+/, 'string'],
+    ],
+  },
+})</textarea>
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="margin-top:0">Anatomia de uma regra</h3>
+      <textarea class="snippet" data-lang="js">{
+  match: /regex/,            // testada na posição atual
+  token: 'keyword',          // ou função, ou array por grupo
+  push: 'outroEstado',       // empilha
+  pop: true,                 // desempilha (ou um número)
+  next: 'estado',            // troca o topo da pilha
+}
+{ include: 'root' }          // reaproveita regras</textarea>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Tokens calculados</h3>
+      <textarea class="snippet" data-lang="js">import { words } from 'jonacode'
+
+{
+  match: /[a-z_]\w*/,
+  token: words({
+    keyword: ['if', 'else', 'while'],
+    'constant.language': ['true', 'false'],
+  }, 'variable'),
+}
+
+// ou qualquer função: (texto, ctx) => token
+token: (text, { line, from, to }) =>
+  line[to] === '(' ? 'function' : 'variable'</textarea>
+    </div>
+  </div>
+  <p>Linguagens também sabem <strong>editar</strong>: <code>comments</code> alimenta o <kbd>Mod</kbd>+<kbd>/</kbd>, <code>brackets</code> alimenta o bracket matching e o auto-indent, <code>closePairs</code> define o que fecha sozinho e <code>indent.increase</code>/<code>decrease</code> controlam a indentação ao dar Enter e ao digitar <code>}</code>.</p>
+
+  <h2 id="passo">O tokenizador passo a passo <span class="tag">animado</span></h2>
+  <p>Esta é a gramática JavaScript real do Jonacode lendo uma linha. Acompanhe a posição, a regra que casou, o token emitido e a pilha de estados. Troque o exemplo ou digite o seu.</p>
+  <div class="stepper panel">
+    <div class="stepper-input">
+      <select id="step-example" aria-label="Exemplos"></select>
+      <input id="step-input" spellcheck="false" aria-label="Linha para tokenizar">
+    </div>
+    <div class="row">
+      <button class="btn small" id="step-reset" type="button">⟲ Reiniciar</button>
+      <button class="btn small" id="step-prev" type="button">← Voltar</button>
+      <button class="btn small primary" id="step-play" type="button">▶ Reproduzir</button>
+      <button class="btn small" id="step-next" type="button">Avançar →</button>
+      <span class="muted mono" id="step-count" style="font-size:12px;margin-left:auto"></span>
+    </div>
+    <div class="tape"><div class="tape-line" id="tape"></div></div>
+    <div class="stepper-grid">
+      <div>
+        <div class="stack-label">Pilha de estados</div>
+        <div class="stack" id="stack"></div>
+      </div>
+      <div style="display:grid;gap:12px;min-width:0">
+        <div><div class="stack-label">Regra que casou</div><div class="rule-card" id="rule"></div></div>
+        <div><div class="stack-label">Tokens emitidos</div><div class="tokens-out" id="tokens-out"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 id="lab">Laboratório: crie uma linguagem <span class="tag">ao vivo</span></h2>
+  <p>À esquerda, a gramática de uma linguagem inventada, a <strong>JonaLang</strong>. À direita, código escrito nela. Edite a gramática e o destaque atualiza enquanto você digita.</p>
+  <div class="lab">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">jonalang.js</span></div><div class="host" id="lab-spec"></div></div>
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">ola.jona</span></div><div class="host" id="lab-code"></div><div class="status" id="lab-status"></div></div>
+  </div>
+  <p class="note">Os exemplos desta página são destacados com as próprias linguagens prontas do Jonacode.</p>
+  <a class="compare-link" href="lab.html"><span>Laboratório completo: formatos Jonacode e Monarch, tokens da linha, pilha no cursor, testes e exportação do módulo</span><b>abrir o laboratório →</b></a>
+
+  <h2 id="aninhadas">Uma linguagem dentro da outra <span class="tag">ao vivo</span></h2>
+  <p>HTML tem JavaScript em <code>&lt;script&gt;</code> e CSS em <code>&lt;style&gt;</code>; Markdown tem blocos de código em qualquer linguagem. Uma regra com <code>embed</code> entrega o texto seguinte a outra linguagem até o marcador de fim aparecer. O marcador não é consumido: quem o destaca é a linguagem de fora.</p>
+  <textarea class="snippet" data-lang="js" data-file="aninhando.js">// HTML: depois do ">" de <script>, JavaScript até "</script"
+{ match: '>', token: 'punctuation.tag', pop: true,
+  embed: { language: javascript, end: /<\/script/i } }
+
+// Markdown: a linguagem vem do bloco e o fim depende da abertura
+// (um bloco aberto com ```` só fecha com ````)
+{ match: /^(`{3,})(\w*)$/, token: ['punctuation.special', 'type'], push: 'fence',
+  embed: {
+    language: (m) => findLanguage([javascript, css], m[2]),
+    end: (m) => new RegExp(`^${m[1]}\\s*$`),
+  } }</textarea>
+  <p>A pilha de estados ganha um degrau que guarda o estado da linguagem de dentro. Esse degrau também é internado, então estados iguais continuam sendo o mesmo objeto e a tokenização incremental converge como antes. Mova o cursor pelo HTML: a pilha e a linguagem no ponto do cursor (<code>editor.languageAt()</code>) decidem o comentário do <kbd>Mod</kbd>+<kbd>/</kbd>, a indentação e os pares que fecham sozinhos.</p>
+  <div class="grid2 embed-demo">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">pagina.html · mova o cursor</span></div><div id="embed-editor" style="height:330px"></div></div>
+    <div class="panel embed-panel">
+      <div class="stack-label">Pilha no cursor</div>
+      <div class="stack" id="embed-stack"></div>
+      <div class="embed-facts">
+        <div><span class="stack-label">languageAt(cursor)</span><b id="embed-lang"></b></div>
+        <div><span class="stack-label">Mod-/ comenta com</span><b class="mono" id="embed-comment"></b></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 id="monarch">Gramáticas do Monaco</h2>
+  <p>O Monaco (o editor do VS Code na web) traz ~80 gramáticas no formato <strong>Monarch</strong>, muito parecido com o do Jonacode. <code>fromMonarch()</code> lê o objeto <code>language</code> de uma delas e devolve uma linguagem do Jonacode, com os nomes de token convertidos para os dos nossos temas (<code>identifier</code> → <code>variable</code>, <code>delimiter</code> → <code>punctuation</code>…). Ele entende atributos (<code>@keywords</code>), <code>cases</code>, <code>@push</code>/<code>@pop</code>/<code>@popall</code>, subestados com <code>$S2</code>, <code>@rematch</code>, grupos e linguagens embutidas (<code>nextEmbedded</code>).</p>
+  <div class="meters">
+    <div class="meter"><b>81 / 81</b><span>gramáticas do Monaco compilam</span></div>
+    <div class="meter"><b>100%</b><span>das 16.809 linhas testadas iguais ao lexer do Monaco</span></div>
+    <div class="meter"><b>~2×</b><span>mais rápido que o lexer do Monaco</span></div>
+    <div class="meter"><b id="monarch-size">3,1 kB</b><span>gzip, só se importar</span></div>
+  </div>
+  <textarea class="snippet" data-lang="js">import { fromMonarch } from 'jonacode/monarch'
+// o objeto `language` (e, se quiser, o `conf`) de monaco-editor/esm/vs/basic-languages/python/python.js
+import { language, conf } from './python.js'
+
+const python = fromMonarch(language, { name: 'python', conf })   // conf: comentários e colchetes
+createEditor(el, { language: python })</textarea>
+  <p class="note">No <a href="lab.html">laboratório</a>, troque para “Monarch” e cole uma gramática: o destaque, os tokens da linha e os testes funcionam igual.</p>
+
+  <h2 id="testes">Testando gramáticas</h2>
+  <p>Gramáticas quebram de jeitos sutis, então vale testá-las. <code>jonacode/testing</code> usa um formato fácil de ler: a linha de código e, embaixo, <code>^</code> sob cada token com o tipo esperado. Funciona com <code>node:test</code>, Vitest, Jest ou qualquer outro, porque só lança um erro. <code>describeTokens()</code> gera esse texto a partir de um exemplo, para você revisar e colar.</p>
+  <textarea class="snippet" data-lang="js" data-file="jonalang.test.js">import { test } from 'node:test'
+import { expectTokens, describeTokens } from 'jonacode/testing'
+import { jonalang } from './jonalang.js'
+
+test('jonalang', () => {
+  expectTokens(jonalang, `
+    funcao ola(nome) {
+    ^^^^^^ keyword
+           ^^^ function
+      retorne "Olá, {nome}!"
+      ^^^^^^^ keyword
+              ^^^^^^ string
+                    ^^^^^^ punctuation.special
+  `)
+})
+
+console.log(describeTokens(jonalang, 'var x = 1'))  // gera o texto acima</textarea>
+  <p class="note">Quando um token não confere, o erro mostra a linha, o esperado e o encontrado, e o bloco certo para copiar e colar no teste.</p>
+
+  <h2 id="tokens-proprios">Tokens personalizados <span class="tag">ao vivo</span></h2>
+  <p>Precisa de um tipo de token novo, como <code>todo</code>, <code>url</code>, <code>cor</code> ou <code>sql</code>? Há três caminhos, do mais simples ao mais poderoso, e todos terminam em uma classe CSS que você estiliza como quiser.</p>
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="margin-top:0">1. Capture sem mexer na gramática</h3>
+      <p class="note" style="margin-top:0"><code>tokenRule</code> roda uma regex sobre a linha já tokenizada e dá um tipo novo ao trecho, opcionalmente só <em>dentro</em> de um tipo (<code>comment</code>, <code>string</code>…).</p>
+      <textarea class="snippet" data-lang="js">tokenRule({
+  match: /\b(TODO|FIXME)\b/,
+  token: 'todo',
+  inside: 'comment',  // vira "comment todo"
+})</textarea>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">2. Estilize como quiser</h3>
+      <p class="note" style="margin-top:0"><code>tokenStyles</code> aceita qualquer propriedade CSS e vale só para este editor, por cima do tema. Também funciona no tema (<code>tokens</code>) ou em CSS puro (<code>.jc-t-todo</code>).</p>
+      <textarea class="snippet" data-lang="js">tokenStyles({
+  'comment todo': {
+    background: '#e5c07b', color: '#282c34',
+    fontWeight: 'bold', borderRadius: '3px',
+  },
+})</textarea>
+    </div>
+  </div>
+  <p><strong>3. Na própria gramática:</strong> qualquer regra pode emitir qualquer nome, e <code>extendLanguage(javascript, { prepend: { root: [...] } })</code> adiciona regras a uma linguagem existente sem reescrevê-la. Use-o quando o token novo muda o <em>estado</em> (ex.: SQL dentro de <code>sql`…`</code>); para marcar trechos dentro de tokens que já existem, prefira o <code>tokenRule</code>.</p>
+  <p>Edite as regras à esquerda. O editor da direita tem o <code>tokenInspector()</code> ligado: <strong>passe o mouse sobre qualquer token</strong> para ver o tipo e a classe que você pode estilizar.</p>
+  <div class="lab">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">tokens.js</span></div><div class="host" id="tok-spec"></div></div>
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">resultado · passe o mouse</span></div><div class="host" id="tok-code"></div><div class="status" id="tok-status"></div></div>
+  </div>
+  <p class="note">Evite no estilo propriedades que mudam a largura do texto (<code>padding</code>, <code>margin</code>, <code>letter-spacing</code>, <code>font-size</code>): o editor mede a fonte uma vez para todo o texto, então um token mais largo que os outros desalinha o cursor dali em diante. Fundos, <code>box-shadow</code>, <code>outline</code>, cores, sublinhados, itálico e negrito são seguros. Um token pode ter até CSS próprio: <code>style: (m) =&gt; `--swatch:${m[0]}`</code>.</p>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== POR DENTRO -->
+<section class="page" data-page="por-dentro" data-color="cyan" data-title="Por dentro">
+  <div class="eyebrow">capítulo 6 <span>· por dentro</span></div>
+  <h1>Como ele funciona <em>por baixo dos panos</em>.</h1>
+  <p class="lead">Como o Jonacode fica rápido e pequeno: do caminho de uma tecla até a virtualização, a tokenização, a geometria e as fontes. Quase toda seção abaixo tem uma demonstração rodando o código de verdade.</p>
+
+  <h2 id="fluxo">O caminho de uma tecla</h2>
+  <p>Todo o estado passa por um único ponto, <code>editor.dispatch(transação)</code>. Uma transação descreve mudanças no texto e a nova seleção. O documento, o highlighter e o histórico são atualizados, e o render é agendado para o próximo frame (ou executado na hora quando a mudança vem do usuário).</p>
+  <div class="diagram" id="flow"></div>
+  <textarea class="snippet" data-lang="js">editor.dispatch({
+  changes: [{ from: { line: 0, col: 0 }, insert: '// olá\n' }],
+  selection: { anchor: { line: 1, col: 0 }, head: { line: 1, col: 0 } },
+  origin: 'input',          // agrupamento do desfazer usa isso
+  scrollIntoView: true,
+})</textarea>
+
+  <h2 id="virtualizacao">Lista virtualizada <span class="tag">ao vivo</span></h2>
+  <p>A altura total é <code>linhas × alturaDaLinha</code>, então a barra de rolagem é real. Mas só as linhas da janela visível (mais uma margem, o <em>overscan</em>) existem no DOM. Cada elemento de linha tem uma chave <code>estado + texto</code>: ao rolar ou editar, elementos com a mesma chave são reaproveitados e só o que mudou é reconstruído.</p>
+  <div class="virt">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">grande.js · 100.000 linhas</span><span class="right"><button class="btn small" id="virt-jump" type="button">Pular para o meio</button></span></div><div class="host" id="virt-editor"></div></div>
+    <div class="rail" id="rail" title="Documento inteiro"><div class="over" id="rail-over"></div><div class="view" id="rail-view"></div></div>
+    <div class="domcol" id="domcol" aria-label="Elementos de linha no DOM"></div>
+  </div>
+  <div class="meters">
+    <div class="meter"><b id="m-lines">100.000</b><span>linhas no documento</span></div>
+    <div class="meter"><b id="m-dom">0</b><span>linhas no DOM</span></div>
+    <div class="meter"><b id="m-reused">0</b><span>reaproveitadas no último frame</span></div>
+    <div class="meter"><b id="m-rebuilt">0</b><span>reconstruídas no último frame</span></div>
+  </div>
+  <p class="note">Role o editor. A trilha mostra onde a janela está no documento e a coluna da direita lista os elementos <code>.jc-line</code> que existem agora no DOM: verdes piscando foram reconstruídos, os demais foram só reposicionados.</p>
+
+  <h2 id="quebra">Quebra de linha <span class="tag">ao vivo</span></h2>
+  <p>Com <code>lineWrapping: true</code>, o Jonacode calcula as quebras <strong>em JavaScript</strong> em vez de deixar o navegador quebrar. Cada linha guarda os pontos onde as linhas visuais começam (depois de espaços quando possível, no meio da palavra quando não) e um <code>&lt;br&gt;</code> é inserido ali. Como as posições são conhecidas sem medir nada, a virtualização continua exata.</p>
+  <p>Linhas passam a ter alturas diferentes, então um <strong>mapa de alturas</strong> guarda a altura de cada linha em px (as linhas visuais, mais o espaço de zonas e blocos; zero quando está dobrada), com somas prefixadas calculadas sob demanda: "onde começa a linha N" é O(1) e "qual linha está no pixel Y" é uma busca binária. Mude a largura e veja o mapa se refazer:</p>
+  <div class="row" style="margin:6px 0 12px">
+    <label class="muted mono" style="font-size:13px;display:flex;gap:10px;align-items:center">largura <input type="range" id="wrap-width" min="260" max="900" value="560"></label>
+    <label class="muted mono" style="font-size:13px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="wrap-on" checked> lineWrapping</label>
+  </div>
+  <div class="wrapdemo">
+    <div class="live" id="wrap-frame"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">quebra.js</span></div><div class="host" id="wrap-editor"></div></div>
+    <div class="heightmap" id="heightmap" aria-label="Mapa de alturas"></div>
+  </div>
+
+  <h2 id="altura">Cresce com a página <span class="tag">ao vivo</span></h2>
+  <p>Sem altura definida no elemento pai, o editor cresce com o conteúdo e a rolagem passa a ser a da página. A virtualização continua: em vez da área do próprio editor, o Jonacode desenha a <strong>interseção do editor com a janela</strong> e com cada ancestral que rola, e redesenha quando qualquer coisa em volta rola.</p>
+  <ul class="list">
+    <li><code>minLines</code> dá uma altura mínima (bom para campos vazios) e <code>maxLines</code> limita o crescimento: dali em diante o editor rola por dentro.</li>
+    <li>Quando o cursor sai da tela (Page Down, busca, <code>scrollIntoView</code>), quem rola é a página.</li>
+    <li>No <code>&lt;jona-code&gt;</code> são os atributos <code>min-lines</code> e <code>max-lines</code>; no React e no Vue, as props <code>minLines</code> e <code>maxLines</code>.</li>
+  </ul>
+  <p>A moldura abaixo simula uma página que rola, com um editor de 3.000 linhas sem altura no meio dela. Role a moldura e acompanhe:</p>
+  <div class="grow-demo">
+    <div class="grow-page" id="grow-page">
+      <div class="grow-text"><b>Minha página</b><p>Um texto antes do editor. O editor abaixo não tem altura: ele mede 3.000 linhas de altura e a rolagem é desta moldura.</p></div>
+      <div class="grow-frame"><div id="grow-editor"></div></div>
+      <div class="grow-text"><p>Fim da página.</p></div>
+    </div>
+    <div class="grow-side">
+      <div class="meter"><b id="grow-height">0</b><span>px de altura do editor</span></div>
+      <div class="meter"><b id="grow-dom">0</b><span>linhas no DOM agora</span></div>
+      <div class="meter"><b id="grow-range">—</b><span>faixa desenhada</span></div>
+    </div>
+  </div>
+
+  <h2 id="milhoes">Milhões de linhas <span class="tag">ao vivo</span></h2>
+  <p>Os navegadores limitam a altura de um elemento (o Firefox a ~17,9 milhões de px, os outros a ~33,5 milhões): com 22 px por linha, isso acaba perto de 800 mil linhas. Acima de 10 milhões de px o Jonacode entra em <strong>modo compacto</strong>: a área rolável fica com 10 milhões de px, a barra de rolagem mapeia proporcionalmente para o documento inteiro e as linhas desenhadas ganham um deslocamento para cair no lugar certo. A roda do mouse, Page Up/Down e o arraste continuam movendo o texto <strong>1:1</strong>.</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small primary" id="big-open" type="button">Abrir 2 milhões de linhas</button>
+    <button class="btn small" id="big-end" type="button">Ir para o fim</button>
+    <button class="btn small" id="big-mid" type="button">Ir para a linha 1.000.000</button>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">enorme.js</span></div><div id="big-editor" style="height:300px"></div></div>
+  <div class="meters">
+    <div class="meter"><b id="big-lines">—</b><span>linhas</span></div>
+    <div class="meter"><b id="big-open-ms">—</b><span>ms para abrir</span></div>
+    <div class="meter"><b id="big-height">—</b><span>px de altura real (rolável: 10 milhões)</span></div>
+    <div class="meter"><b id="big-dom">—</b><span>linhas no DOM</span></div>
+  </div>
+  <p class="note">Medido no Chrome (Apple M2): 1 milhão de linhas abrem em ~70 ms, 2 milhões em ~120 ms e 5 milhões em ~600 ms. A memória fica perto de 2 a 3 vezes o tamanho do arquivo.</p>
+
+  <h2 id="incremental">Tokenização incremental <span class="tag">ao vivo</span></h2>
+  <p>O highlighter guarda o <strong>estado no início de cada linha</strong>. Uma edição invalida a partir da linha editada, mas a re-tokenização para assim que o estado recalculado bate com o antigo: a partir dali, nada mudou. Os estados são <em>internados</em> (pilhas iguais são o mesmo objeto), então a comparação é um <code>===</code>. Além disso o trabalho é preguiçoso e só vai até a última linha visível; o resto é feito em segundo plano, em fatias que usam só o tempo ocioso do navegador (<code>requestIdleCallback</code>), então nunca atrasam um quadro. Num salto para o meio de 100 mil linhas, as linhas aparecem com o melhor estado conhecido e a cor é corrigida logo depois.</p>
+  <div class="row" id="incr-buttons"></div>
+  <div class="live" style="margin-top:12px"><div id="incr-editor" style="height:330px"></div><div class="status"><span class="incr-out" id="incr-out">Edite o código: as linhas re-tokenizadas piscam e a coluna da esquerda mostra o estado no início de cada linha.</span></div></div>
+
+  <h2 id="pintura">Pintura dos tokens <span class="tag">medido</span></h2>
+  <p>Pintar é o caminho mais quente do editor: acontece a cada tecla e a cada frame de rolagem. Estas são as otimizações, das regex até o DOM:</p>
+  <ul class="list">
+    <li><strong>Despacho pelo primeiro caractere.</strong> Na definição da linguagem, cada regex é analisada estaticamente para descobrir quais caracteres ASCII podem iniciar um casamento. Numa posição, o tokenizador só testa as regras possíveis para aquele caractere. Na gramática JavaScript isso deu <strong>1,8× mais velocidade</strong> (303 mil → 549 mil linhas/s em código real), com saída idêntica.</li>
+    <li><strong>Reaproveitamento por chave.</strong> Uma linha só é repintada se o texto, o estado inicial ou o layout mudaram, e a comparação é feita campo a campo, sem montar strings.</li>
+    <li><strong>Cache LRU de HTML.</strong> O HTML das últimas 2.500 linhas fica guardado: rolar para cima e para baixo não re-tokeniza nada.</li>
+    <li><strong>Um <code>innerHTML</code> por linha</strong>, com tokens adjacentes do mesmo tipo já mesclados, e <code>contain: layout style</code> em cada linha, para que mudanças não recalculem o resto da página.</li>
+    <li><strong>Trabalho só na tela.</strong> Tokens e transformações (<code>tokenRule</code>) só rodam para as linhas renderizadas.</li>
+  </ul>
+  <p>Digite um caractere e veja quais regras do estado <code>root</code> da gramática JavaScript seriam testadas nessa posição:</p>
+  <div class="panel dispatch">
+    <div class="row"><input id="dispatch-char" maxlength="2" value="c" aria-label="Caractere" class="mono"><span class="muted mono" id="dispatch-summary" style="font-size:13px"></span></div>
+    <div id="dispatch-rules" class="dispatch-rules"></div>
+  </div>
+  <div class="row" style="margin-top:14px"><button class="btn small" id="paint-bench" type="button">Medir a pintura agora</button><span class="muted mono" id="paint-out" style="font-size:13px">mede 60 saltos no editor de 100.000 linhas acima</span></div>
+
+  <h2 id="multicursor">Múltiplos cursores <span class="tag">ao vivo</span></h2>
+  <p>A seleção é uma lista de ranges ordenados, <code>{ ranges, main }</code>. Ranges que se sobrepõem são fundidos automaticamente. Os comandos são escritos para <strong>um</strong> cursor e rodam em todos com <code>changeByRange</code>: cada chamada enxerga o documento já com as mudanças dos cursores anteriores, e tudo vira uma única transação e um único passo de desfazer.</p>
+  <textarea class="snippet" data-lang="js">// Um comando que duplica a palavra em cada cursor
+editor.changeByRange((range) => {
+  const [from, to] = editor.wordRange(range.head)
+  const word = editor.doc.slice(from, to)
+  return {
+    changes: { from: to, insert: word },
+    range: { anchor: to, head: { line: to.line, col: to.col + word.length } },
+  }
+})</textarea>
+  <div class="grid2">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">Alt+clique · Mod+D · Alt+Shift+arrastar</span></div><div id="mc-editor" style="height:260px"></div></div>
+    <div class="log" id="mc-state" style="height:auto;min-height:260px"></div>
+  </div>
+  <div class="row" id="mc-buttons" style="margin-top:12px"></div>
+
+  <h2 id="entrada">Entrada de texto <span class="tag">ao vivo</span></h2>
+  <p>O texto que você vê não é editável: é só DOM desenhado. Quem recebe o teclado é um <code>&lt;textarea&gt;</code> invisível que acompanha o cursor. Isso dá de graça IME (acentos, chinês, japonês), clipboard e o menu de contexto nativo, sem as armadilhas do <code>contenteditable</code>. O fluxo fica assim:</p>
+  <ul class="list">
+    <li><code>keydown</code> → mapa de atalhos. <code>Mod</code> é <kbd>⌘</kbd> no macOS e <kbd>Ctrl</kbd> no resto. Se um comando retorna <code>true</code>, o evento é cancelado.</li>
+    <li><code>input</code> → o texto digitado passa pelos <em>input handlers</em> (o <code>closeBrackets</code> é um) e vira uma transação.</li>
+    <li><code>composition*</code> → durante a composição do IME o editor desenha o texto sublinhado no lugar do cursor, e ele só entra no documento no final.</li>
+    <li><code>copy</code>/<code>cut</code>/<code>paste</code> → sem seleção, copiar e recortar agem na linha inteira (como no VS Code).</li>
+  </ul>
+  <div class="grid2">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">digite aqui</span></div><div id="input-editor" style="height:290px"></div></div>
+    <div class="log" id="input-log" aria-live="polite"></div>
+  </div>
+
+  <h2 id="acessibilidade">Leitor de tela <span class="tag">ao vivo</span></h2>
+  <p>Leitores de tela leem campos de texto, não desenhos. Por isso o textarea invisível não fica vazio: ele <strong>espelha uma página de 10 linhas</strong> em volta do cursor, com a mesma seleção. Setas, palavras e seleções são anunciadas como num campo nativo, e o que você digita é lido de volta comparando o textarea com o espelho. Clique no editor e mova o cursor:</p>
+  <div class="grid2 a11y-demo">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">clique e mova o cursor</span></div><div id="a11y-editor" style="height:300px"></div></div>
+    <div class="panel a11y-panel">
+      <div class="stack-label">O que o leitor de tela recebe</div>
+      <div class="a11y-role" id="a11y-role"></div>
+      <pre class="a11y-mirror" id="a11y-mirror"></pre>
+    </div>
+  </div>
+  <ul class="list">
+    <li><kbd>Esc</kbd> e depois <kbd>Tab</kbd> tiram o foco do editor (o <kbd>Tab</kbd> sozinho indenta), então o teclado nunca fica preso.</li>
+    <li>Os números de linha ficam fora da árvore de acessibilidade (<code>aria-hidden</code>) e o rótulo vem da opção <code>ariaLabel</code>.</li>
+    <li>Em alto contraste (<code>forced-colors</code>), cursor, seleção e colchetes usam as cores do sistema; com <code>prefers-reduced-motion</code>, o cursor para de piscar.</li>
+  </ul>
+  <p class="note">Conferido na árvore de acessibilidade do Chrome: papel <em>textbox</em>, multilinha, com o texto e a seleção. Ainda falta testar com NVDA, JAWS, VoiceOver e TalkBack. No celular o textarea segue no modo sentinela (veja abaixo), que é o que os teclados virtuais precisam.</p>
+
+  <h2 id="toque">Toque (mobile)</h2>
+  <p>No celular a rolagem é 100% nativa. A extensão <code>touch()</code> (já no <code>basicSetup</code>) acrescenta os gestos:</p>
+  <div class="grid2">
+    <ul class="list" style="margin:0">
+      <li><strong>Toque</strong> posiciona o cursor e abre o teclado.</li>
+      <li><strong>Toque duplo</strong> ou <strong>toque longo</strong> selecionam a palavra (com vibração curta).</li>
+      <li><strong>Alças</strong> arrastáveis ajustam o início e o fim da seleção.</li>
+      <li>Uma <strong>barra</strong> oferece Copiar, Recortar, Colar e Tudo (traduzível com <code>phrases</code>).</li>
+      <li>O teclado virtual é tratado via <code>beforeinput</code>, e o textarea guarda um caractere sentinela invisível para que o Backspace chegue mesmo com o campo "vazio".</li>
+      <li>O textarea usa fonte de 16px em telas de toque, o que evita o zoom automático do iOS, e o cursor volta à vista quando o teclado abre (<code>visualViewport</code>).</li>
+    </ul>
+    <div class="phone"><div class="phone-screen"><div id="phone-editor"></div></div></div>
+  </div>
+  <h3>Validado no Android</h3>
+  <p>Testado no Chrome 133 do Android 16 (emulador Pixel com o teclado Gboard), com toques e digitação injetados pelo próprio sistema, na página <code>examples/mobile.html</code>:</p>
+  <div class="table-wrap"><table class="validation">
+    <thead><tr><th>Cenário</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Toque posiciona o cursor na coluna certa e abre o teclado; o cursor continua visível acima dele</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>Digitação pelo Gboard, Enter com indentação e Backspace até juntar linhas</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>Sugestão do teclado completa a palavra (“ok” → “okay ”)</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>Toque longo e toque duplo selecionam a palavra; as alças ajustam a seleção</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>Copiar pela barra vai para a área de transferência do sistema; colar pelo sistema insere no cursor</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>Rolagem nativa dentro do editor e na página (editor que cresce, 44 linhas no DOM de 2.000)</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>Quebra de linha: toque no meio de uma linha quebrada cai na coluna certa</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>100 mil linhas com a CPU 4× mais lenta: 35–56 ms para abrir, ~30 ms para pular ao meio, ~2,5 ms por tecla</td><td><span class="sym yes">✓</span></td></tr>
+      <tr><td>“Colar” da barra: o Chrome pede permissão de área de transferência na primeira vez (limite da web; colar pelo teclado ou pelo sistema não pede)</td><td><span class="sym part">~</span></td></tr>
+      <tr><td>iOS Safari</td><td><span class="sym no">✗</span> <small>ainda não testado</small></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="geometria">Geometria</h2>
+  <p>Converter coluna ↔ pixel precisa ser barato, porque acontece em cada tecla e em cada clique. Para linhas só com ASCII numa fonte monoespaçada (a grande maioria em código), a conta é aritmética: <code>x = colunaVisual × larguraDoCaractere</code>, com tabs expandidos até a próxima parada. Para linhas com emoji, CJK ou acentos combinados, e para qualquer linha numa <a href="#por-dentro/fontes">fonte proporcional</a>, o editor mede o texto renderizado com um <code>Range</code> do DOM e faz busca binária no clique.</p>
+  <div class="ruler" id="ruler"></div>
+  <p class="note">O movimento do cursor também respeita grafemas: <code>👍🏽</code> são 4 unidades UTF-16, mas um passo de cursor.</p>
+
+  <h2 id="fontes">Fontes e tamanhos <span class="tag">ao vivo</span></h2>
+  <p>Qualquer fonte e qualquer tamanho funcionam: pela opção (<code>fontFamily</code>, <code>fontSize</code>, <code>lineHeight</code>) ou só pelo CSS (<code>--jc-font-family</code>, <code>--jc-font-size</code>, <code>--jc-line-height</code>, uma classe no pai, o zoom). O editor mede a fonte num elemento escondido ao lado das linhas, que herda os mesmos estilos, e mede de novo sempre que ele muda de tamanho: uma web font que termina de carregar, um tema novo, uma media query.</p>
+  <ul class="list">
+    <li><b>Medida com fração de pixel:</b> a largura do caractere vem de 200 caracteres medidos sem arredondar. Arredondada, ela desviava um pixel a cada poucas centenas de colunas.</li>
+    <li><b>Fontes proporcionais:</b> o editor percebe quando <code>i</code> e <code>W</code> têm larguras diferentes. Aí mede o texto de verdade para o cursor e os cliques, e quebra as linhas pela largura de cada caractere.</li>
+    <li><b>Negrito e itálico:</b> quando a fonte não tem negrito, o navegador pode fabricar um mais largo (o Safari faz isso). O editor mede os dois e não deixa o cursor escorregar depois de um token em negrito.</li>
+    <li><b>Altura da linha</b> em pixels inteiros (como os blocos estáticos, com <code>round()</code>). A largura do gutter dos números usa a largura de um dígito, então os números cabem mesmo em fontes proporcionais.</li>
+  </ul>
+  <div class="row" style="margin-bottom:12px">
+    <label class="muted mono" style="font-size:12px;display:flex;align-items:center;gap:8px">fonte
+      <select id="font-family">
+        <option value="'JetBrains Mono', monospace">JetBrains Mono (web font)</option>
+        <option value="'Martian Mono', monospace">Martian Mono (web font)</option>
+        <option value="ui-monospace, Menlo, Consolas, monospace">monospace do sistema</option>
+        <option value="Geist, system-ui, sans-serif">Geist (proporcional)</option>
+        <option value="Georgia, 'Times New Roman', serif">Georgia (proporcional, serifa)</option>
+      </select></label>
+    <label class="muted mono" style="font-size:12px;display:flex;align-items:center;gap:8px">tamanho <input type="range" id="font-size" min="10" max="28" step="0.5" value="14"> <span id="font-size-v">14px</span></label>
+    <label class="muted mono" style="font-size:12px;display:flex;align-items:center;gap:8px">altura <input type="range" id="font-lh" min="1" max="2.2" step="0.05" value="1.6"> <span id="font-lh-v">1.6</span></label>
+    <label class="muted mono" style="font-size:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" id="font-wrap"> quebrar linhas</label>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">fontes.js</span><span class="right mono" id="font-metrics"></span></div><div id="font-editor" style="height:300px"></div></div>
+  <p class="note">Clique no fim das linhas longas, selecione texto com acentos, emoji e CJK, troque para uma fonte proporcional: o cursor e a seleção continuam em cima das letras. O teste <code>e2e/fonts.spec.ts</code> confere isso nos três motores, com fontes monoespaçadas e proporcionais, dois tamanhos e duas alturas de linha, fonte trocada só pelo CSS, web font que carrega depois e o editor escalado por <code>transform</code>.</p>
+
+  <h2 id="historico">Histórico <span class="tag">ao vivo</span></h2>
+  <p>Cada transação guarda as mudanças aplicadas (com o texto removido), então desfazer é aplicar o inverso em ordem reversa. Digitação contínua com a mesma origem, dentro de 600 ms e no mesmo ponto, é mesclada em um único passo. Um clique ou uma pausa quebram o grupo. Outro histórico pode assumir com <code>editor.setUndoProvider()</code>: é o que a <a href="#extensoes/colaboracao">edição colaborativa</a> faz para desfazer só as suas edições.</p>
+  <div class="grid2">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">digite, pause, desfaça</span><span class="right"><button class="btn small" id="hist-undo" type="button">Desfazer</button><button class="btn small" id="hist-redo" type="button">Refazer</button></span></div><div id="hist-editor" style="height:200px"></div></div>
+    <div class="hist" id="hist"><div class="lane"><span>desfazer</span></div><div class="lane redo"><span>refazer</span></div></div>
+  </div>
+
+  <h2 id="tree-shaking">Tree-shaking <span class="tag">tamanhos reais</span></h2>
+  <p>O pacote tem <code>"sideEffects": false</code> e cada recurso é um módulo ESM separado. Linguagens e temas extras ficam em entradas próprias (<code>jonacode/languages/*</code>, <code>jonacode/themes/*</code>). Marque o que seu app usa. Os números foram medidos com esbuild (minificado + gzip) ao gerar esta página.</p>
+  <div class="shake">
+    <div class="panel checks" id="checks"></div>
+    <div class="panel">
+      <div class="stack-label">Seu bundle</div>
+      <div class="bundle-total" id="bundle-total">0 kB</div>
+      <div class="muted mono" style="font-size:12.5px">minificado + gzip</div>
+      <div class="bundle-bar" id="bundle-bar" style="margin-top:16px"></div>
+      <div class="legend" id="legend"></div>
+      <div id="shake-code"></div>
+    </div>
+  </div>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== EXTENSÕES -->
+<section class="page" data-page="extensoes" data-color="yellow" data-title="Extensões e API">
+  <div class="eyebrow">capítulo 7 <span>· extensões e API</span></div>
+  <h1>Extensões são <em>funções</em>.</h1>
+  <p class="lead">Uma extensão recebe o editor e usa a API pública para se registrar. Pode devolver uma função de limpeza. Tudo o que ela registra é desfeito automaticamente em <code>setExtensions()</code> ou <code>destroy()</code>.</p>
+
+  <h2 id="anatomia">Anatomia</h2>
+  <div class="hooks">
+    <div class="hook"><code>addKeymap(bindings)</code><p>Atalhos com precedência sobre os padrões.</p></div>
+    <div class="hook"><code>addInputHandler(fn)</code><p>Intercepta o texto digitado antes da inserção.</p></div>
+    <div class="hook"><code>addGutter(spec)</code><p>Colunas à esquerda, virtualizadas junto com as linhas.</p></div>
+    <div class="hook"><code>addLayer(spec)</code><p>Camadas desenhadas abaixo ou acima do texto; com <code>fixed</code>, paradas quando o texto rola para o lado.</p></div>
+    <div class="hook"><code>setLineGaps(nome, lacunas)</code><p>Espaço entre linhas (em linhas ou px) para zonas e blocos; a virtualização conta com ele.</p></div>
+    <div class="hook"><code>on(evento, fn)</code><p><code>change</code>, <code>selection</code>, <code>render</code>, <code>scroll</code>, <code>focus</code>…</p></div>
+    <div class="hook"><code>dispatch(transação)</code><p>A única porta para mudar texto e seleção.</p></div>
+    <div class="hook"><code>addChangeFilter(fn)</code><p>Veta uma transação inteira antes de ela valer (trechos protegidos, limites).</p></div>
+    <div class="hook"><code>addMouseHandler(fn)</code><p>Trata o clique antes do editor; devolva <code>true</code> para ficar com ele.</p></div>
+  </div>
+
+  <h2 id="incluidas">Extensões incluídas</h2>
+  <p>Todas são opcionais e independentes. O tamanho é o acréscimo real ao bundle (gzip) quando você a importa.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Extensão</th><th>O que faz</th><th style="text-align:right">gzip</th></tr></thead>
+    <tbody id="ext-table"></tbody>
+  </table></div>
+
+  <h2 id="visualizador">Visualizador de logs <span class="tag">ao vivo</span></h2>
+  <p>Arquivos grandes são onde o Jonacode mais se diferencia, e logs são o caso típico. Quatro peças montam um visualizador:</p>
+  <ul class="list">
+    <li><code>editor.append(texto)</code> acrescenta ao fim sem entrar no histórico e, se o fim estava na tela, continua seguindo (como <code>tail -f</code>).</li>
+    <li><code>lineClass(fn)</code> dá uma classe à linha inteira a partir do texto: aqui, um fundo por nível. Só as linhas desenhadas são avaliadas.</li>
+    <li><code>gotoLine()</code> (no <code>basicSetup</code>): <kbd>Ctrl</kbd>+<kbd>G</kbd> aceita <code>120</code>, <code>120:8</code>, <code>+20</code> e <code>50%</code>.</li>
+    <li>A busca conta em segundo plano, em fatias, e mostra o parcial (<code>12.345…</code>) enquanto conta. A posição (<code>3 / 142.857</code>) sai na hora.</li>
+  </ul>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small primary" id="log-stream" type="button">▶ Transmitir</button>
+    <button class="btn small" id="log-million" type="button">+ 1 milhão de linhas</button>
+    <button class="btn small" id="log-search" type="button">Buscar ERROR</button>
+    <button class="btn small" id="log-goto" type="button">Ctrl+G</button>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">app.log</span><span class="right mono" id="log-rate"></span></div><div id="log-editor" style="height:340px"></div></div>
+  <div class="meters">
+    <div class="meter"><b id="log-lines">0</b><span>linhas</span></div>
+    <div class="meter"><b id="log-dom">0</b><span>linhas no DOM</span></div>
+    <div class="meter"><b id="log-last">—</b><span>ms na última inserção</span></div>
+    <div class="meter"><b id="log-follow">sim</b><span>seguindo o fim</span></div>
+  </div>
+  <textarea class="snippet" data-lang="js" data-file="logs.js">import { createEditor, basicSetup, lineClass } from 'jonacode'
+import { log } from 'jonacode/languages/log'
+
+const viewer = createEditor(el, {
+  readOnly: true,
+  language: log,
+  extensions: [
+    basicSetup(),
+    lineClass((texto) => /\bERROR\b/.test(texto) ? 'erro' : null),  // .jc-line-deco.erro { … }
+  ],
+})
+
+socket.onmessage = (e) => viewer.append('\n' + e.data)   // segue o fim sozinho</textarea>
+  <p class="note">A página <code>examples/viewer.html</code> tem a versão em tela cheia.</p>
+
+  <h2 id="busca">Busca e substituição <span class="tag">ao vivo</span></h2>
+  <p><kbd>Mod</kbd>+<kbd>F</kbd> abre a busca e <kbd>Mod</kbd>+<kbd>Alt</kbd>+<kbd>F</kbd> (ou <kbd>Ctrl</kbd>+<kbd>H</kbd>) abre também a substituição. <kbd>Enter</kbd>/<kbd>Shift</kbd>+<kbd>Enter</kbd> navegam, <kbd>Alt</kbd>+<kbd>Enter</kbd> transforma todas as ocorrências em cursores, e a substituição com regex aceita <code>$1</code>, <code>$&amp;</code> e <code>$&lt;nome&gt;</code>. Só as linhas visíveis são destacadas, e a contagem roda em segundo plano, em fatias, então documentos com milhões de linhas continuam fluidos.</p>
+  <p><strong>Várias linhas:</strong> cole um trecho com quebras no campo (ele cresce até 4 linhas), insira uma quebra com <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Enter</kbd>, ou use <code>\n</code> numa regex. As ocorrências são destacadas atravessando as linhas. Clique abaixo para buscar <code>{\n  return</code> no exemplo:</p>
+  <div class="row" style="margin-bottom:12px"><button class="btn small" id="search-multiline" type="button">Buscar em várias linhas</button></div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">busca.js</span></div><div id="search-editor" style="height:280px"></div></div>
+  <textarea class="snippet" data-lang="js">import { search, openSearch, setSearchQuery } from 'jonacode'
+
+createEditor(el, {
+  extensions: [search({ caseSensitive: false })],
+  phrases: { Find: 'Buscar', Replace: 'Substituir', 'Replace all': 'Substituir tudo' },
+})
+
+// também pela API
+openSearch(editor)
+setSearchQuery(editor, { search: 'usuario(\\d+)', regexp: true, replace: 'user$1' })</textarea>
+
+  <h2 id="marcacoes">Marcações <span class="tag">ao vivo</span></h2>
+  <p>Marcações são trechos, linhas e widgets desenhados atrás ou na frente do texto, em conjuntos com nome. Elas não mudam o layout do texto, então a virtualização e a geometria continuam exatas, e <strong>acompanham as edições</strong>: as posições são remapeadas a cada mudança. Diagnósticos e o <code>⋯</code> do folding são feitos com elas. (Para elementos com espaço próprio entre as linhas, veja as <a href="#extensoes/zonas">zonas</a>.) Selecione um trecho e marque; depois edite o texto em volta:</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small primary" id="deco-mark" type="button">Marcar a seleção</button>
+    <button class="btn small" id="deco-line" type="button">Destacar a linha</button>
+    <button class="btn small" id="deco-widget" type="button">Widget no fim da linha</button>
+    <button class="btn small" id="deco-clear" type="button">Limpar</button>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">marcacoes.js</span><span class="right mono" id="deco-count"></span></div><div id="deco-editor" style="height:260px"></div></div>
+  <textarea class="snippet" data-lang="js">import { setDecorations, decorationsAt } from 'jonacode'
+
+setDecorations(editor, 'revisao', [
+  { from: { line: 3, col: 4 }, to: { line: 3, col: 12 }, class: 'destaque' },       // trecho (atrás do texto)
+  { from: { line: 3, col: 4 }, to: { line: 3, col: 12 }, class: 'borda', above: true },  // na frente
+  { from: { line: 7, col: 0 }, line: true, class: 'linha-alterada' },               // a linha inteira
+  { from: { line: 7, col: 42 }, widget: () => criarBadge('revisar'), data: { autor: 'ana' } },
+])
+decorationsAt(editor, pos)   // o que está sob uma posição (com o `data` de cada uma)</textarea>
+
+  <h2 id="zonas">Zonas e widgets <span class="tag">ao vivo</span></h2>
+  <p>Para colocar elementos seus <strong>entre as linhas</strong>, como uma barra de ações acima de uma função, um texto, um comentário ou uma prévia, use <code>addZone</code>. É o que o Monaco chama de <em>view zone</em>. A zona ocupa espaço próprio, as linhas de baixo descem, e ela não vira parte do texto: o cursor pula por cima, copiar não a leva junto e a numeração continua certa.</p>
+  <ul class="list">
+    <li><b>Altura automática:</b> a zona mede o próprio conteúdo e acompanha quando ele muda (antes da pintura, sem piscar). Também aceita altura fixa em px ou em linhas (<code>lines: 2</code> cresce junto com a fonte).</li>
+    <li><b>Acompanha as edições:</b> <kbd>Enter</kbd> no começo da linha leva junto a zona de cima; no fim, a zona de baixo fica embaixo da linha. Some quando a linha está dobrada.</li>
+    <li><b>Fica à vista</b> quando o código rola para o lado (ou rola junto, com <code>scroll: true</code>); pode alinhar com a indentação da linha e ter algo no gutter ao lado.</li>
+    <li><b>Interativa:</b> cliques, campos e seleção de texto dentro da zona são dela; o editor não mexe no cursor. Os botões de <code>actions</code> rodam sem tirar o foco do código.</li>
+  </ul>
+  <p>Ao lado das zonas, <code>addWidget</code> põe um elemento flutuando acima ou abaixo de uma posição, sem ocupar espaço e trocando de lado quando não cabe; e <code>addOverlay</code> fixa um elemento num canto da área visível. No editor abaixo, as barras acima de cada função são zonas recalculadas a cada edição (mude um nome ou crie uma função):</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small primary" id="zone-comment" type="button">Comentário abaixo do cursor</button>
+    <button class="btn small" id="zone-text" type="button">Texto acima do cursor</button>
+    <button class="btn small" id="zone-widget" type="button">Widget no cursor</button>
+    <button class="btn small" id="zone-overlay" type="button">Overlay no canto</button>
+    <button class="btn small" id="zone-clear" type="button">Limpar</button>
+    <span class="muted mono" style="font-size:12px" id="zone-status"></span>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">zonas.js</span><span class="right mono" id="zone-count"></span></div><div id="zones-editor" style="height:380px"></div></div>
+  <textarea class="snippet" data-lang="js" data-file="zonas.js">import { addZone, addWidget, addOverlay } from 'jonacode'
+
+// Um texto acima da linha 5 (índice 4)
+addZone(editor, { line: 4, content: 'Calcula o frete com base no peso e na distância' })
+
+// Uma barra de ações (como o CodeLens do VS Code), alinhada com o código da linha
+addZone(editor, { line: 9, actions: [
+  { label: '▶ Executar', run: (ed, zona) => rodar(zona.line) },
+  { label: '3 referências', title: 'Mostrar referências', run: mostrarReferencias },
+] })
+
+// Qualquer elemento, abaixo da linha, com algo no gutter; a altura segue o conteúdo
+const zona = addZone(editor, { line: 20, side: 'below', content: criarComentario(), gutter: '💬' })
+zona.dom.querySelector('textarea').focus()   // já está na página, no lugar
+zona.update({ line: 22 })                    // mover, trocar o conteúdo, a altura…
+zona.remove()
+
+addZone(editor, { line: 3, content: previa, lines: 2 })      // altura em linhas (acompanha a fonte)
+addZone(editor, { line: 3, content: banner, cover: true })   // cobre também o gutter
+
+// Flutuando sobre o texto, sem ocupar espaço; e fixo num canto
+addWidget(editor, { pos: editor.selection.head, content: botao, place: 'above' })
+addOverlay(editor, { content: 'JavaScript · UTF-8', position: 'bottom-right' })</textarea>
+  <p class="note">O módulo pesa <span class="mono" data-size="zones"></span> com os três. Por baixo está <code>editor.setLineGaps(nome, lacunas)</code>, que reserva espaço (em px ou em linhas) acima ou abaixo de linhas, e <code>addLayer({ fixed: true })</code>, uma camada que não rola para o lado. Os blocos de <code>setDecorations</code>, o diff inline e o merge usam a mesma base.</p>
+
+  <h2 id="diagnosticos">Diagnósticos e tooltips <span class="tag">ao vivo</span></h2>
+  <p>O Jonacode não traz um linter: <code>setDiagnostics()</code> recebe o que o seu produzir, e <code>linter(fonte)</code> o roda depois de cada edição (com atraso e descartando respostas de um texto que já mudou). Os diagnósticos aparecem como sublinhado ondulado, um marcador na margem e, com <code>inline: true</code>, a mensagem no fim da linha. Ao passar o mouse, o <strong>tooltip</strong> mostra as mensagens e as correções rápidas; <kbd>F8</kbd> e <kbd>Shift</kbd>+<kbd>F8</kbd> andam entre eles. O linter de brinquedo abaixo marca <code>var</code>, <code>==</code>, <code>console.log</code> e nomes não declarados. Edite:</p>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">lint.js · passe o mouse nos sublinhados</span><span class="right mono" id="diag-count"></span></div><div id="diag-editor" style="height:320px"></div></div>
+  <textarea class="snippet" data-lang="js">import { createEditor, basicSetup, linter, hoverTooltip } from 'jonacode'
+
+createEditor(el, {
+  extensions: [
+    basicSetup(),
+    linter((editor) => meuLinter(editor.getValue()).map((erro) => ({
+      from: erro.inicio, to: erro.fim,
+      severity: 'error',                  // 'error' | 'warning' | 'info' | 'hint'
+      message: erro.mensagem,
+      actions: [{ name: 'Corrigir', apply: (ed, d) => ed.dispatch({ changes: { from: d.from, to: d.to, insert: erro.correcao } }) }],
+    })), { inline: true }),
+    // Outras fontes de tooltip dividem a mesma caixa (sync ou async)
+    hoverTooltip((pos, editor) => documentacao(editor, pos)),
+  ],
+})</textarea>
+
+  <h2 id="autocomplete">Autocomplete <span class="tag">ao vivo</span></h2>
+  <p>Leve e sem LSP: por padrão sugere as palavras da linguagem no ponto do cursor (<code>completions</code> de cada gramática; JavaScript dentro de um <code>&lt;script&gt;</code> sugere JavaScript) e as palavras do documento perto do cursor. Fontes suas podem ser síncronas ou assíncronas: as rápidas aparecem na hora e as lentas se juntam quando chegam, e consultas velhas são canceladas por um <code>AbortSignal</code>. A busca é aproximada: <code>gEBI</code> encontra <code>getElementById</code>. Abre enquanto você digita uma palavra, ou com <kbd>Ctrl</kbd>+<kbd>Espaço</kbd>; <kbd>↑</kbd>/<kbd>↓</kbd> escolhem, <kbd>Enter</kbd>/<kbd>Tab</kbd> aceitam e <kbd>Esc</kbd> fecha. Digite <code>pro</code> (produtos de uma “API” com 200 ms de atraso), <code>con</code> ou <code>gEBI</code>:</p>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">autocomplete.js · digite</span></div><div id="ac-editor" style="height:280px"></div></div>
+  <textarea class="snippet" data-lang="js">import { autocomplete, languageWords, documentWords } from 'jonacode'
+
+createEditor(el, {
+  extensions: [
+    basicSetup(),
+    autocomplete({
+      sources: [
+        languageWords(),                 // palavras-chave da linguagem no cursor
+        documentWords(),                 // palavras do documento, as mais próximas primeiro
+        async ({ word, signal }) => {    // a sua: síncrona ou assíncrona
+          const itens = await fetch(`/api/produtos?q=${word.text}`, { signal }).then((r) => r.json())
+          return itens.map((p) => ({ label: p.nome, type: 'text', detail: p.preco, info: p.descricao }))
+        },
+      ],
+    }),
+  ],
+})</textarea>
+  <p class="note">A lista usa <code>role="listbox"</code> e o campo do editor ganha <code>aria-expanded</code> e <code>aria-activedescendant</code>, então leitores de tela anunciam a opção escolhida. No celular, tocar numa sugestão ou usar o Enter do teclado virtual aceita.</p>
+
+  <h2 id="folding">Folding <span class="tag">ao vivo</span></h2>
+  <p>Uma linha pode ser dobrada quando termina com um colchete de abertura (até o par, mantendo a linha de fechamento visível), quando as linhas seguintes são mais indentadas (Python, YAML…) ou quando é um título de Markdown (até o próximo título do mesmo nível). As linhas dobradas somem da lista virtualizada. As setas pulam a dobra; a busca e o “ir para a linha” a abrem. Clique nas setas da margem ou no <code>⋯</code>:</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small" id="fold-all" type="button">Dobrar tudo (Ctrl+Alt+[)</button>
+    <button class="btn small" id="unfold-all" type="button">Desdobrar tudo (Ctrl+Alt+])</button>
+    <span class="muted mono" style="font-size:12px"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>[</kbd> / <kbd>]</kbd> no cursor (<kbd>⌘</kbd>+<kbd>⌥</kbd>+<kbd>[</kbd> / <kbd>]</kbd> no macOS)</span>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">dobras.js</span><span class="right mono" id="fold-count"></span></div><div id="fold-editor" style="height:320px"></div></div>
+  <textarea class="snippet" data-lang="js">import { folding } from 'jonacode'
+
+createEditor(el, { extensions: [basicSetup(), folding()] })
+
+editor.setFolds([{ from: 10, to: 24 }])   // o núcleo esconde as linhas 10–24 (sob a 9)
+editor.folds                                // dobras atuais, que acompanham as edições</textarea>
+
+  <h2 id="tree-sitter">Validação com tree-sitter <span class="tag">ao vivo</span></h2>
+  <p>O destaque do Jonacode é um tokenizador rápido, não um parser: ele pinta, mas não sabe se o código é válido. Para isso existe o <code>treeSitter()</code>, que roda o <a href="https://tree-sitter.github.io/">tree-sitter</a> (o parser do GitHub, do Neovim e do Zed, compilado para WebAssembly) ao lado do editor:</p>
+  <ul class="list">
+    <li><b>Validação.</b> Os erros de sintaxe viram diagnósticos: sublinhado ondulado, marcador na margem, tooltip e <kbd>F8</kbd>. Convivem com os do seu linter, cada fonte no seu conjunto.</li>
+    <li><b>Correção.</b> Quando o deslize é claro, o tooltip oferece a correção: inserir o <code>)</code> que falta, remover a vírgula sobrando no JSON, fechar o <code>[</code>, a string ou o <code>if</code> do bash (<code>fi</code>). O fechamento vai para onde a indentação do bloco termina, não para o fim do arquivo. <code>fixAllSyntax</code> aplica todas num passo de desfazer.</li>
+    <li><b>Linguagens aninhadas.</b> O código dentro de <code>&lt;script&gt;</code> e <code>&lt;style&gt;</code> no HTML e dos blocos de código no Markdown é validado com a gramática dele.</li>
+    <li><b>Sem travar.</b> A análise é incremental e roda em tempo ocioso, em fatias de 6 ms: num arquivo de 20 mil linhas, o pior quadro enquanto carrega, analisa e reanalisa ficou em 17–18 ms no Chromium e no Firefox e em até 30 ms no WebKit (um quadro são ~17 ms).</li>
+    <li><b>Árvore sintática.</b> <code>syntaxTree(editor)</code> e <code>nodeAt(editor, pos)</code> dão a árvore às suas extensões, e <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>→</kbd>/<kbd>←</kbd> (<kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd>+<kbd>→</kbd>/<kbd>←</kbd> no macOS) expandem e encolhem a seleção por nó.</li>
+  </ul>
+  <p>A demonstração baixa o tree-sitter e as gramáticas da CDN na primeira vez (precisa de internet). Escolha uma linguagem e passe o mouse nos erros:</p>
+  <div class="row" style="margin-bottom:12px">
+    <select id="ts-lang" class="btn small" aria-label="Linguagem"></select>
+    <button class="btn small primary" id="ts-fix" type="button">Corrigir tudo</button>
+    <span class="muted mono" style="font-size:12px" id="ts-status"></span>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title" id="ts-title">validacao.js</span></div><div id="ts-editor" style="height:300px"></div></div>
+  <h3>Como importar</h3>
+  <p>O Jonacode não depende do tree-sitter: você entrega o <code>web-tree-sitter</code> e as gramáticas, então o seu bundler decide como carregar, e quem não usa não paga nada. O módulo (<span class="mono" data-size="treeSitter"></span> com os diagnósticos) escolhe a gramática pelo <code>editor.language.name</code>, então as linguagens que você já usa continuam as mesmas.</p>
+  <textarea class="snippet" data-lang="js" data-file="validacao.js">import { treeSitter, grammarsFrom, cdnGrammars, cdnTreeSitter } from 'jonacode/tree-sitter'
+
+// 1) Com bundler (npm i web-tree-sitter tree-sitter-javascript): o tree-sitter vira um pedaço à parte,
+//    baixado só quando o editor abre. No Vite, a URL do wasm vem de `…/tree-sitter-javascript.wasm?url`.
+treeSitter({ load: () => import('web-tree-sitter'), grammars: { javascript: jsWasmUrl } })
+
+// 2) Arquivos .wasm copiados para /wasm (a lista está em GRAMMARS: pacote, versão e arquivo).
+treeSitter({ load: () => import('web-tree-sitter'), grammars: grammarsFrom('/wasm/') })
+
+// 3) Sem instalar nada (protótipos, HTML puro com o bundle &lt;script&gt;): tudo da CDN.
+treeSitter({ load: cdnTreeSitter, grammars: cdnGrammars() })</textarea>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Linguagem</th><th>Gramática</th><th style="text-align:right">wasm (gzip)</th></tr></thead>
+    <tbody>
+      <tr><td><code>javascript</code>, <code>jsx</code></td><td>tree-sitter-javascript</td><td class="mono" style="text-align:right">49 kB</td></tr>
+      <tr><td><code>typescript</code> · <code>tsx</code></td><td>tree-sitter-typescript</td><td class="mono" style="text-align:right">136 · 139 kB</td></tr>
+      <tr><td><code>json</code></td><td>tree-sitter-json</td><td class="mono" style="text-align:right">2 kB</td></tr>
+      <tr><td><code>css</code></td><td>tree-sitter-css</td><td class="mono" style="text-align:right">21 kB</td></tr>
+      <tr><td><code>html</code> (+ JS e CSS dentro)</td><td>tree-sitter-html</td><td class="mono" style="text-align:right">7 kB</td></tr>
+      <tr><td><code>shell</code></td><td>tree-sitter-bash</td><td class="mono" style="text-align:right">180 kB</td></tr>
+      <tr><td><code>markdown</code></td><td>nenhuma: os blocos de código usam a gramática da linguagem deles</td><td class="mono" style="text-align:right">—</td></tr>
+      <tr><td><code>sql</code></td><td>sem wasm pronto no npm: gere com <code>tree-sitter build --wasm</code> e passe como <code>sql</code></td><td class="mono" style="text-align:right">—</td></tr>
+      <tr><td><code>log</code></td><td>não se aplica</td><td class="mono" style="text-align:right">—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">O próprio <code>web-tree-sitter</code> pesa 31 kB de JavaScript e 81 kB de wasm (gzip), baixados uma vez e compartilhados por todos os editores da página. Para a IA, <code>editorTools(editor, { verify: getSyntaxProblems })</code> devolve os erros de sintaxe ao modelo depois de cada edição, e <code>createSyntaxChecker(opções).check(texto, 'javascript')</code> valida a resposta de um modelo antes de aplicá-la.</p>
+
+  <h2 id="colaboracao">Edição colaborativa <span class="tag">ao vivo</span></h2>
+  <p><code>collab(adaptador, opções)</code> transforma o editor num editor cooperativo: ele parte do texto compartilhado, envia as suas edições, aplica as dos outros e mostra quem está ali. O backend é um adaptador: <code>yjs()</code> já vem pronto e funciona com qualquer provedor do <a href="https://yjs.dev/">Yjs</a> (y-websocket, Hocuspocus, y-webrtc, Liveblocks, PartyKit…). Um servidor seu entra implementando quatro funções. Assim como no tree-sitter, o Jonacode não importa o Yjs: você entrega o módulo.</p>
+  <ul class="list">
+    <li><b>Cursores e seleções</b> de cada pessoa, com nome e cor. O nome aparece por um instante quando ela mexe (<code>labels: 'activity'</code>), ou sempre, ao passar o mouse, ou nunca.</li>
+    <li><b>Avatares</b> no canto: clique num para <b>seguir</b> a pessoa (a sua tela vai aonde o cursor dela vai, até você digitar, clicar ou rolar). Quem está parado há um minuto fica esmaecido.</li>
+    <li><b>Destaque</b> rápido no que os outros acabaram de digitar.</li>
+    <li><b>Desfazer só o seu:</b> <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> não apaga o trabalho dos outros. Com Yjs usa o <code>Y.UndoManager</code>; com outros backends, um histórico próprio que se ajusta às edições alheias e descarta o passo que alguém editou por cima.</li>
+    <li><b>Compatível</b> com os cursores do y-codemirror e do y-monaco (mesmos campos no <code>awareness</code>): pessoas em editores diferentes na mesma sala se enxergam.</li>
+  </ul>
+  <p>Os dois editores abaixo são duas pessoas ligadas por uma “rede” simulada, com o Yjs baixado da CDN. Digite nos dois ao mesmo tempo, aumente a latência, deixe o Bruno offline e volte:</p>
+  <div class="row" style="margin-bottom:12px">
+    <label class="muted mono" style="font-size:12px;display:flex;align-items:center;gap:8px">latência <input type="range" id="co-latency" min="0" max="1500" step="50" value="250"> <span id="co-latency-v">250 ms</span></label>
+    <button class="btn small" id="co-offline" type="button">Bruno fica offline</button>
+    <button class="btn small primary" id="co-bot" type="button">+ Carla digitando</button>
+    <span class="muted mono" style="font-size:12px" id="co-status"></span>
+  </div>
+  <div class="agent-grid">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">Ana</span></div><div id="co-ana" style="height:300px"></div></div>
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">Bruno</span><span class="right mono" id="co-bruno-state"></span></div><div id="co-bruno" style="height:300px"></div></div>
+  </div>
+  <textarea class="snippet" data-lang="js" data-file="colaborativo.js">import * as Y from 'yjs'
+import { WebsocketProvider } from 'y-websocket'
+import { collab, yjs } from 'jonacode/collab'
+
+const doc = new Y.Doc()
+const provider = new WebsocketProvider('wss://seu-servidor', 'sala-42', doc)
+
+createEditor(el, {
+  language: javascript,
+  extensions: [
+    basicSetup(),
+    collab(yjs({ Y, text: doc.getText('codigo'), awareness: provider.awareness }), {
+      user: { name: 'Ana', color: '#c678dd', data: { avatar: '/ana.png' } },
+      labels: 'activity',             // 'always' | 'hover' | 'never'
+      onPeers: (pessoas) => atualizarLista(pessoas),
+    }),
+  ],
+})
+
+// Sala nova? Ponha o conteúdo inicial no Y.Text (uma vez), não no editor.
+provider.once('synced', () => doc.getText('codigo').length || doc.getText('codigo').insert(0, modelo))</textarea>
+  <p>Um backend seu (OT, outro CRDT, um relay) implementa <code>CollabAdapter</code>: <code>text()</code>, <code>send(ops)</code> com as suas edições em offsets, <code>receive(fn)</code> para as dos outros num delta (<code>retain</code> / <code>insert</code> / <code>delete</code>, o formato do Yjs e do Quill) e, se quiser presença, <code>setPresence</code> e <code>peers</code>:</p>
+  <textarea class="snippet" data-lang="js" data-file="meu-backend.js">import { collab } from 'jonacode/collab'
+
+const adaptador = {
+  text: () => textoAtual,
+  send: (ops) => socket.send(JSON.stringify({ tipo: 'ops', ops })),        // [{ at, remove, insert }]
+  receive: (fn) => ouvir('delta', (delta) => fn(delta, 'remote')),        // [{ retain }, { insert }, { delete }]
+  setPresence: (eu) => socket.send(JSON.stringify({ tipo: 'presenca', eu })),
+  peers: (fn) => ouvir('pessoas', fn),                                     // [{ id, name, color, anchor, head }]
+}
+createEditor(el, { extensions: [basicSetup(), collab(adaptador, { user: { name: 'Ana' } })] })
+
+getPeers(editor)              // quem está aqui, com a seleção de cada um
+followPeer(editor, id)        // seguir alguém (null para parar)
+setCollabUser(editor, { name: 'Ana Souza' })</textarea>
+  <p class="note">O módulo pesa <span class="mono" data-size="collab"></span> com o adaptador do Yjs; o Yjs em si (~25 kB gzip) e o provedor vêm do seu projeto. Edições que chegam dos outros passam pelos trechos protegidos (<code>readOnlyRanges</code> vale para quem está digitando aqui) e, se algo recusar uma delas, o editor recarrega o texto compartilhado em vez de divergir.</p>
+
+  <h2 id="exemplo">Exemplo ao vivo <span class="tag">~30 linhas</span></h2>
+  <p>Duas extensões escritas do zero: um gutter de <strong>breakpoints</strong> (clique à esquerda dos números) e uma camada que destaca <strong>TODOs</strong>. O código abaixo é o que está rodando.</p>
+  <textarea class="snippet" data-lang="js" data-file="extensoes.js" id="ext-src">function breakpoints() {
+  const marks = new Set()
+  return (editor) => {
+    editor.addGutter({
+      className: 'breakpoints',
+      width: () => '22px',
+      cell: (line) => (marks.has(line) ? { text: '●', className: 'bp' } : ''),
+      onMouseDown(line, event, ed) {
+        marks.has(line) ? marks.delete(line) : marks.add(line)
+        ed.requestRender()
+        return true // não seleciona a linha
+      },
+    })
+  }
+}
+
+function highlightTodos() {
+  return (editor) => editor.addLayer({
+    className: 'todos',
+    render(dom, ed) {
+      const { from, to } = ed.visibleRange // só as linhas renderizadas
+      let html = ''
+      for (let line = from; line <= to; line++) {
+        const col = ed.doc.line(line).indexOf('TODO')
+        if (col < 0) continue
+        const a = ed.coordsAtPos({ line, col })
+        const b = ed.coordsAtPos({ line, col: col + 4 })
+        html += `<div class="todo-mark" style="left:${a.x}px;top:${a.top}px;width:${b.x - a.x}px"></div>`
+      }
+      dom.innerHTML = html
+    },
+  })
+}
+
+createEditor(host, { language: javascript, extensions: [breakpoints(), highlightTodos(), basicSetup()] })</textarea>
+  <div class="ext-demo"><div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">resultado</span></div><div class="host" id="ext-editor"></div></div></div>
+
+  <h3>Atalhos próprios</h3>
+  <textarea class="snippet" data-lang="js">import { keymap, commands } from 'jonacode'
+
+const salvar = keymap([
+  { key: 'Mod-s', run: (editor) => { salvarArquivo(editor.getValue()); return true } },
+  { key: 'Alt-l', mac: 'Ctrl-l', run: commands.selectLine },
+], 'high')</textarea>
+
+  <h2 id="referencia">Referência da API</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Membro</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>getValue()</code> · <code>setValue(texto)</code></td><td>Lê ou troca o documento inteiro. <code>setValue</code> zera o histórico e preserva o cursor quando possível.</td></tr>
+      <tr><td><code>selection</code> · <code>setSelection(âncora, cabeça?)</code></td><td>Range principal <code>{ anchor, head }</code> com posições <code>{ line, col }</code> começando em zero.</td></tr>
+      <tr><td><code>ranges</code> · <code>mainIndex</code> · <code>setSelections(ranges, main?)</code></td><td>Todos os cursores (ordenados, sem sobreposição) e qual é o principal.</td></tr>
+      <tr><td><code>changeByRange(fn, opções?)</code></td><td>Aplica uma edição em cada cursor: <code>fn(range)</code> devolve <code>{ changes, range }</code>. Uma transação, um passo de desfazer.</td></tr>
+      <tr><td><code>getSelectedText()</code> · <code>replaceSelection(texto)</code></td><td>Texto selecionado e substituição com cursor no final.</td></tr>
+      <tr><td><code>dispatch(transação)</code></td><td>Aplica mudanças e seleção. Veja <a href="#por-dentro/fluxo">o caminho de uma tecla</a>.</td></tr>
+      <tr><td><code>undo()</code> · <code>redo()</code> · <code>canUndo</code> · <code>canRedo</code></td><td>Histórico.</td></tr>
+      <tr><td><code>setOptions(parcial)</code></td><td>Atualiza qualquer opção, incluindo linguagem, tema e extensões.</td></tr>
+      <tr><td><code>doc</code></td><td>O <code>TextDocument</code>: <code>lines</code>, <code>lineCount</code>, <code>line(n)</code>, <code>slice(de, até)</code>.</td></tr>
+      <tr><td><code>getTokens(linha)</code></td><td>Tokens de uma linha com a linguagem atual.</td></tr>
+      <tr><td><code>append(texto, { follow? })</code> · <code>languageAt(pos)</code></td><td>Acrescenta ao fim fora do histórico, seguindo o fim como <code>tail -f</code>; a linguagem num ponto (JavaScript dentro de um <code>&lt;script&gt;</code>, por exemplo).</td></tr>
+      <tr><td><code>coordsAtPos(pos)</code> · <code>posAtCoords(x, y)</code> · <code>posAtClient(x, y)</code></td><td>Geometria relativa a <code>contentDOM</code> (ou à janela, em <code>posAtClient</code>).</td></tr>
+      <tr><td><code>clientToContent(x, y)</code> · <code>contentToClient(x, y)</code></td><td>Converte entre coordenadas da janela e do texto, com a escala de um <code>transform</code> nos ancestrais.</td></tr>
+      <tr><td><code>charWidth</code> · <code>digitWidth</code> · <code>lineHeight</code> · <code>monospace</code> · <code>gutterWidth</code></td><td>Medidas da fonte em px (a largura sem arredondar) e se toda coluna tem a mesma largura.</td></tr>
+      <tr><td><code>setLineGaps(nome, lacunas)</code> · <code>gapBlock(linha, lado)</code></td><td>Espaço acima/abaixo de linhas, em linhas ou em px: a base das zonas e dos blocos.</td></tr>
+      <tr><td><code>setFolds(faixas)</code> · <code>folds</code> · <code>isLineHidden(linha)</code></td><td>O mecanismo das dobras (a interface vem do <code>folding()</code>).</td></tr>
+      <tr><td><code>rangeRects(de, até)</code> · <code>lineBlock(linha)</code></td><td>Retângulos de um trecho (um por linha visual, já considerando a quebra) e a faixa vertical de uma linha. Base para destaques.</td></tr>
+      <tr><td><code>addTokenTransform(fn)</code> · <code>addCursorModifier(m)</code> · <code>addMouseHandler(fn)</code></td><td>Pontos de extensão para tokens, cursores com modificador do mouse e cliques.</td></tr>
+      <tr><td><code>wordRange(pos)</code> · <code>phrase(texto)</code> · <code>invalidateLines()</code></td><td>Palavra sob uma posição, texto traduzido de interface e repintura forçada.</td></tr>
+      <tr><td><code>scrollIntoView(pos?, centro?)</code> · <code>scrollBy(dy)</code> · <code>visibleRange</code> · <code>viewportHeight</code></td><td>Rolagem (1:1 mesmo no modo compacto), faixa de linhas renderizadas e altura visível.</td></tr>
+      <tr><td><code>addChangeFilter(fn)</code> · <code>setUndoProvider(p)</code></td><td>Vetar transações (trechos protegidos) e entregar o desfazer a outro histórico (colaboração).</td></tr>
+      <tr><td><code>focus()</code> · <code>blur()</code> · <code>hasFocus</code></td><td>Foco.</td></tr>
+      <tr><td><code>on(evento, fn)</code></td><td>Retorna a função que remove o listener.</td></tr>
+      <tr><td><code>requestRender()</code> · <code>flush()</code></td><td>Agenda um render (próximo frame) ou executa o pendente agora.</td></tr>
+      <tr><td><code>destroy()</code></td><td>Remove tudo.</td></tr>
+      <tr><td><code>dom</code> · <code>scrollDOM</code> · <code>contentDOM</code> · <code>inputDOM</code></td><td>Elementos internos, para estilizar ou integrar.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="atalhos">Atalhos</h2>
+  <p>Os de <strong>navegação e edição</strong> estão sempre ligados. Os marcados com <em>extra</em> vêm do <code>editingKeymap</code> (incluído no <code>basicSetup</code>). Nesta tabela, <kbd>Mod</kbd> = <kbd id="mod-key">Ctrl</kbd>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Atalho</th><th>Ação</th></tr></thead>
+    <tbody id="keys"></tbody>
+  </table></div>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+<!-- =============================================================== IA -->
+<section class="page" data-page="ia" data-color="magenta" data-title="IA">
+  <div class="eyebrow">capítulo 8 <span>· inteligência artificial</span></div>
+  <h1>Um editor que a IA <em>sabe usar</em>.</h1>
+  <p class="lead">Dois tipos de IA mexem num editor de código: a do seu produto, que você liga a um modelo, e a de fora, um agente de navegador que olha a página e digita como uma pessoa. O Jonacode atende os dois com peças opcionais, sem depender de nenhum provedor: você decide qual modelo chamar e como.</p>
+
+  <div class="ai-faces">
+    <div class="ai-face">
+      <b>A IA do produto</b>
+      <p>Seu app liga um modelo ao editor. O modelo lê, busca, edita e vê os erros por ferramentas prontas; a pessoa revisa cada trecho.</p>
+      <code>editorTools()</code> <code>applyEdits()</code> <code>diffView()</code> <code>inlineSuggestion()</code> <code>inlineEdit()</code>
+    </div>
+    <div class="ai-face">
+      <b>A IA de fora</b>
+      <p>Um agente de navegador preenche o campo, lê a árvore de acessibilidade ou chama ferramentas que a página oferece.</p>
+      <code>preencher campo</code> <code>aria-description</code> <code>exposeTools()</code>
+    </div>
+  </div>
+
+  <h2 id="agente">Um agente, sem montar nada <span class="tag">ao vivo</span></h2>
+  <p><code>editorTools(editor)</code> devolve as definições das ferramentas (JSON Schema) e um <code>run(nome, entrada)</code> que as executa no editor. Linhas numeradas a partir de 1, erros escritos para o modelo entender e corrigir sozinho, e cada edição vira um passo só de desfazer. O agente abaixo é simulado (as chamadas são fixas), mas as respostas são as reais da biblioteca:</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small primary" id="agent-run" type="button">▶ Rodar o agente</button>
+    <button class="btn small" id="agent-step" type="button">Um passo</button>
+    <button class="btn small" id="agent-reset" type="button">Recomeçar</button>
+    <label class="muted mono" style="font-size:12px"><input type="checkbox" id="agent-claude"> formato do Claude (<code>str_replace_based_edit_tool</code>)</label>
+  </div>
+  <div class="agent-grid">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">carrinho.js</span><span class="right mono" id="agent-status"></span></div><div id="agent-editor" style="height:360px"></div></div>
+    <div class="agent-log" id="agent-log" aria-live="polite"></div>
+  </div>
+  <textarea class="snippet" data-lang="js" data-file="navegador.js">import { editorTools } from 'jonacode/ai'
+
+const tools = editorTools(editor)                  // ou { 'index.html': ed1, 'app.js': ed2 }
+const mensagens = [{ role: 'user', content: 'Corrija os erros deste arquivo.' }]
+
+while (true) {
+  // A chave da API fica no servidor: o navegador só repassa mensagens e ferramentas.
+  const resposta = await fetch('/api/claude', {
+    method: 'POST',
+    body: JSON.stringify({ messages: mensagens, tools: tools.anthropic({ textEditor: true }) }),
+  }).then((r) => r.json())
+  mensagens.push({ role: 'assistant', content: resposta.content })
+  if (resposta.stop_reason !== 'tool_use') break
+
+  const resultados = []
+  for (const bloco of resposta.content) {
+    if (bloco.type !== 'tool_use') continue
+    const { content, isError } = await tools.run(bloco.name, bloco.input)
+    resultados.push({ type: 'tool_result', tool_use_id: bloco.id, content, is_error: isError })
+  }
+  mensagens.push({ role: 'user', content: resultados })   // todos os resultados numa mensagem só
+}</textarea>
+  <textarea class="snippet" data-lang="ts" data-file="servidor.ts">import Anthropic from '@anthropic-ai/sdk'
+
+const client = new Anthropic()   // lê ANTHROPIC_API_KEY do ambiente
+
+export async function POST(req: Request) {
+  const { messages, tools } = await req.json()
+  const resposta = await client.beta.messages.create({
+    model: 'claude-opus-5-5',
+    max_tokens: 16000,
+    thinking: { type: 'adaptive' },
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',          // se o modelo recusar, outro assume a mesma chamada
+    tools,
+    messages,
+  })
+  return Response.json(resposta)
+}</textarea>
+  <p class="note">Com <code>{ textEditor: true }</code> o Claude recebe a ferramenta de edição de texto que ele já conhece (<code>view</code>, <code>str_replace</code>, <code>insert</code>, <code>create</code>) e o <code>run()</code> a executa no editor. Para outros provedores, <code>tools.openai()</code> e <code>tools.definitions</code> (formato MCP) trazem as mesmas ferramentas: <code>read_file</code>, <code>search_file</code>, <code>edit_file</code>, <code>insert_lines</code>, <code>write_file</code>, <code>get_selection</code>, <code>get_problems</code> e <code>undo_last_edit</code>.</p>
+
+  <h2 id="edicoes">Edições no formato da IA <span class="tag">ao vivo</span></h2>
+  <p>Modelos erram número de linha e coluna, mas escrevem bem blocos “procurar e substituir”, diffs e arquivos inteiros. <code>applyEdits(editor, resposta)</code> aceita os três e tolera os deslizes comuns: indentação trocada, espaços no fim da linha, número de linha errado no diff, texto quase igual. Quando não dá, o erro diz onde está o trecho mais parecido, para o modelo tentar de novo. Escolha uma resposta “bagunçada” e aplique:</p>
+  <div class="row" style="margin-bottom:12px">
+    <select id="edits-sample" class="btn small"></select>
+    <button class="btn small primary" id="edits-apply" type="button">Aplicar</button>
+    <button class="btn small" id="edits-undo" type="button">Desfazer (um passo)</button>
+  </div>
+  <div class="agent-grid">
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">resposta do modelo</span></div><div id="edits-input" style="height:260px"></div></div>
+    <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">util.js</span></div><div id="edits-editor" style="height:260px"></div></div>
+  </div>
+  <pre class="agent-result mono" id="edits-result"></pre>
+  <textarea class="snippet" data-lang="js">import { applyEdits } from 'jonacode/ai'
+
+const r = applyEdits(editor, textoDoModelo)   // blocos SEARCH/REPLACE, diff unificado ou o arquivo inteiro
+r.ok        // tudo aplicado (por padrão é tudo ou nada)
+r.summary   // "Applied 2 edits (lines 12–18, 40)." — pronto para devolver ao modelo
+r.errors    // [{ message, hint: { line, similarity, text } }]
+r.ranges    // onde o texto novo ficou
+
+applyEdits(editor, [{ old: 'let x = 1', new: 'const x = 1' }])   // ou operações estruturadas</textarea>
+
+  <h2 id="revisao">Revisão com diff <span class="tag">ao vivo</span></h2>
+  <p>Depois que a IA edita, a pessoa decide. <code>diffView({ original })</code> compara o documento com um texto anterior: linhas removidas aparecem em blocos entre as linhas (que entram na lista virtualizada como qualquer linha), as novas ficam em verde, o que mudou dentro da linha é marcado, e cada trecho tem <b>Aceitar</b> e <b>Rejeitar</b>. Os blocos usam a mesma base das <a href="#extensoes/zonas">zonas</a>, que você pode usar para os seus próprios elementos entre linhas (<code>addZone</code>).</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small primary" id="review-ai" type="button">Deixar a “IA” editar</button>
+    <button class="btn small" id="review-accept" type="button">Aceitar tudo</button>
+    <button class="btn small" id="review-reject" type="button">Rejeitar tudo</button>
+    <span class="muted mono" style="font-size:12px" id="review-count"></span>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">revisao.js</span></div><div id="review-editor" style="height:340px"></div></div>
+  <textarea class="snippet" data-lang="js">import { diffView, setOriginal, acceptAll } from 'jonacode'
+
+const editor = createEditor(el, { extensions: [basicSetup(), diffView({ original: salvo })] })
+
+const antes = editor.getValue()
+await agente(editor)            // a IA edita…
+setOriginal(editor, antes)      // …e a pessoa revisa trecho a trecho</textarea>
+  <p>Para comparar lado a lado, <code>mergeView(el, { a, b })</code> cria dois editores alinhados (espaços vazios compensam as linhas que só existem de um lado) com rolagem sincronizada:</p>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">antes · depois</span></div><div id="merge-host" style="height:300px"></div></div>
+
+  <h2 id="sugestoes">Sugestões enquanto digita <span class="tag">ao vivo</span></h2>
+  <p><code>inlineSuggestion(fonte)</code> mostra o texto fantasma estilo Copilot: <kbd>Tab</kbd> aceita, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>→</kbd> aceita uma palavra, <kbd>Esc</kbd> descarta. A fonte recebe o texto antes e depois do cursor e devolve uma string, uma Promise ou um stream (async iterable); pedidos velhos são cancelados por um <code>AbortSignal</code>. A fonte aqui é falsa e responde a alguns começos. Digite <code>function soma(</code>, <code>const total = itens.</code> ou <code>// ordena</code>:</p>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">sugestoes.js · digite</span></div><div id="suggest-editor" style="height:260px"></div></div>
+  <textarea class="snippet" data-lang="js">import { inlineSuggestion } from 'jonacode/ai'
+
+inlineSuggestion(async function* ({ prefix, suffix, language }, signal) {
+  const res = await fetch('/api/completar', { method: 'POST', body: JSON.stringify({ prefix, suffix, language }), signal })
+  for await (const pedaço of res.body.pipeThrough(new TextDecoderStream())) yield pedaço
+})</textarea>
+
+  <h2 id="editar">Editar com IA <span class="tag">ao vivo</span></h2>
+  <p><code>inlineEdit(fonte)</code>: selecione linhas e aperte <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd>. Uma caixa aparece entre as linhas; a resposta chega em tempo real num bloco abaixo, sem mexer no documento, e entra de uma vez quando termina (um passo de desfazer). Você pode continuar editando em outro lugar enquanto isso. Com <code>onApply</code> a mudança vai para a revisão do <code>diffView</code>. Experimente “async”, “comente” ou “renomeie para total”:</p>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">editar.js · selecione e Ctrl/⌘+K</span></div><div id="inline-edit-editor" style="height:300px"></div></div>
+  <textarea class="snippet" data-lang="js">import { inlineEdit } from 'jonacode/ai'
+import { setOriginal } from 'jonacode'
+
+inlineEdit(({ instruction, text, before, after, language }, signal) => chamarModelo({ instruction, text }, signal), {
+  onApply: (editor, antes) => setOriginal(editor, antes),   // revisar com diffView
+})</textarea>
+
+  <h2 id="navegador">Agentes de navegador</h2>
+  <p>Editores virtualizados costumam ser hostis a agentes que operam a página: só as linhas na tela existem no DOM, e o campo de texto escondido guarda só um pedaço. O Jonacode trata os três caminhos que esses agentes usam:</p>
+  <ul class="list">
+    <li><b>Preencher o campo.</b> Quando um script ou uma ferramenta de automação seleciona o campo inteiro e digita (o “fill” do Playwright, o preencher do agente), isso vale pelo documento inteiro, num passo de desfazer. Se o script só alterou a página que leu do campo, só ela muda.</li>
+    <li><b>Ler a árvore de acessibilidade.</b> O campo diz que é uma parte do arquivo: <code>aria-description="Lines 21–30 of 200"</code> (traduzível por <code>phrases</code>). Leitores de tela ganham a mesma informação.</li>
+    <li><b>Chamar ferramentas.</b> <code>exposeTools(editorTools(editor))</code> registra as ferramentas na proposta WebMCP quando o navegador a oferece; sem ela, não faz nada.</li>
+  </ul>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small" id="fill-demo" type="button">Simular “preencher campo”</button>
+    <span class="muted mono" style="font-size:12px" id="fill-desc"></span>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">200 linhas</span></div><div id="fill-editor" style="height:200px"></div></div>
+
+  <h2 id="protecoes">Proteções e verificação <span class="tag">ao vivo</span></h2>
+  <p><code>readOnlyRanges([...])</code> protege trechos que ninguém edita, nem a pessoa nem a IA: bom para exercícios (“só edite dentro da função”) e modelos de CMS. As edições da IA que tocam um trecho protegido falham com uma mensagem clara. Depois de cada edição, as ferramentas esperam o linter e devolvem os problemas ao modelo, que corrige sem ninguém pedir. E <code>markAIEdits</code> destaca o que a IA escreveu. Tente editar as linhas acinzentadas:</p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn small" id="protect-ai" type="button">IA muda a assinatura</button>
+    <button class="btn small primary" id="protect-ai-ok" type="button">IA resolve o exercício</button>
+  </div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">exercicio.js</span></div><div id="protect-editor" style="height:240px"></div></div>
+  <pre class="agent-result mono" id="protect-result"></pre>
+  <textarea class="snippet" data-lang="js">import { readOnlyRanges, lineRange } from 'jonacode'
+import { editorTools } from 'jonacode/ai'
+
+createEditor(el, { extensions: [basicSetup(), linter(meuLinter), readOnlyRanges([{ from: inicio, to: fim }])] })
+
+const tools = editorTools(editor, {
+  verify: (ed) => meuLinter(ed),   // opcional: por padrão lê os diagnósticos depois que o linter roda
+})</textarea>
+
+  <h2 id="contexto">Contexto para o prompt</h2>
+  <p>Para montar prompts sem mandar o arquivo inteiro: <code>describeEditor(editor)</code> resume caminho, linguagem, cursor, seleção, problemas e as linhas em volta do cursor, dentro de um limite de caracteres; <code>fimContext(editor)</code> devolve o texto antes e depois do cursor para modelos de completar no meio.</p>
+  <textarea class="snippet" data-lang="js">import { describeEditor, fimContext } from 'jonacode/ai'
+
+describeEditor(editor, { maxChars: 8000 })   // texto pronto para o prompt
+fimContext(editor)                            // { prefix, suffix, language, line, col }</textarea>
+
+  <nav class="pager" data-pager></nav>
+</section>
+
+  </main>
+</div>
+
+<!-- @lib -->
+<!-- @app -->
+</body>
+</html>

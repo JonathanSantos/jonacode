@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jonacode · visualizador de logs</title>
+  <link rel="icon" href="../assets/logo.svg">
+  <style>
+    :root { color-scheme: dark; --bg: #1e2127; --panel: #21252b; --line: #2f343d; --text: #abb2bf; --muted: #7f848e; --accent: #61afef }
+    * { box-sizing: border-box }
+    html, body { height: 100%; margin: 0 }
+    body { background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, sans-serif; display: flex; flex-direction: column; padding: 14px; gap: 10px }
+    header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+    h1 { font-size: 17px; margin: 0 12px 0 0 }
+    button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer }
+    button:hover { border-color: var(--accent) }
+    button[aria-pressed="true"] { border-color: var(--accent); color: #fff }
+    label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted) }
+    .frame { flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+    footer { display: flex; flex-wrap: wrap; gap: 18px; color: var(--muted); font: 12px ui-monospace, monospace }
+    footer b { color: var(--text); font-weight: 500 }
+    kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px }
+    /* Line backgrounds by level (lineClass) */
+    .jc-line-deco.lv-error { background: #e06c7524; box-shadow: inset 3px 0 #e06c75 }
+    .jc-line-deco.lv-warn { background: #e5c07b14; box-shadow: inset 3px 0 #e5c07b }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Visualizador de logs</h1>
+    <button id="stream" type="button" aria-pressed="false">▶ Transmitir</button>
+    <button id="million" type="button">+ 1 milhão de linhas</button>
+    <button id="clear" type="button">Limpar</button>
+    <label><input type="checkbox" id="follow" checked> seguir o fim</label>
+    <span style="color:var(--muted);font-size:13px"><kbd>Ctrl</kbd>+<kbd>G</kbd> ir para a linha · <kbd>Ctrl/⌘</kbd>+<kbd>F</kbd> buscar</span>
+  </header>
+  <div class="frame" id="viewer"></div>
+  <footer><span>linhas <b id="lines">0</b></span><span>no DOM <b id="dom">0</b></span><span>última inserção <b id="last">—</b></span><span>taxa <b id="rate">—</b></span></footer>
+
+  <script type="module">
+    import { createEditor, basicSetup, lineClass } from '../dist/index.js'
+    import { log } from '../dist/languages/log.js'
+
+    const LEVEL = /\b(ERROR|FATAL)\b|\b(WARN)\b/
+    const viewer = createEditor(document.getElementById('viewer'), {
+      readOnly: true,
+      language: log,
+      extensions: [
+        basicSetup(),
+        lineClass((text) => {
+          const m = LEVEL.exec(text)
+          return m ? (m[1] ? 'lv-error' : 'lv-warn') : null
+        }),
+      ],
+    })
+
+    // Fake but realistic log lines.
+    const paths = ['/api/pedidos', '/api/clientes/42', '/login', '/static/app.js', '/api/busca?q=editor']
+    const levels = ['INFO', 'INFO', 'INFO', 'DEBUG', 'WARN', 'ERROR']
+    let n = 0
+    const line = () => {
+      const t = new Date(Date.now() + n * 7).toISOString()
+      const lv = levels[(n * 7919) % levels.length]
+      n++
+      if (lv === 'ERROR') return `${t} ERROR [worker-${n % 4}] Falha ao processar pedido id=${crypto.randomUUID()} duration=${(n % 900) + 12}ms\n    at processar (src/pedidos.js:${(n % 300) + 1}:17)`
+      if (lv === 'WARN') return `${t} WARN  [http] Resposta lenta GET ${paths[n % paths.length]} status=200 duration=${(n % 4000) + 800}ms`
+      return `${t} ${lv.padEnd(5)} [http] ${['GET', 'POST', 'PUT'][n % 3]} ${paths[n % paths.length]} status=${[200, 201, 304, 404][n % 4]} ip=10.0.${n % 255}.${(n * 13) % 255} duration=${n % 90}ms`
+    }
+    const append = (count) => {
+      const chunk = Array.from({ length: count }, line).join('\n')
+      const t0 = performance.now()
+      viewer.append((viewer.doc.lineCount === 1 && !viewer.doc.line(0) ? '' : '\n') + chunk, { follow: document.getElementById('follow').checked ? undefined : false })
+      viewer.flush()
+      document.getElementById('last').textContent = `${count.toLocaleString('pt-BR')} linhas em ${(performance.now() - t0).toFixed(1)} ms`
+    }
+
+    let timer = 0
+    let perSec = 0
+    document.getElementById('stream').addEventListener('click', (e) => {
+      const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'
+      e.currentTarget.setAttribute('aria-pressed', String(on))
+      e.currentTarget.textContent = on ? '⏸ Pausar' : '▶ Transmitir'
+      clearInterval(timer)
+      if (on) timer = setInterval(() => { append(40); perSec += 40 }, 100)
+    })
+    setInterval(() => { document.getElementById('rate').textContent = perSec ? `${perSec.toLocaleString('pt-BR')} linhas/s` : '—'; perSec = 0 }, 1000)
+    document.getElementById('million').addEventListener('click', () => append(1_000_000))
+    document.getElementById('clear').addEventListener('click', () => viewer.setValue(''))
+    const stats = () => {
+      document.getElementById('lines').textContent = viewer.doc.lineCount.toLocaleString('pt-BR')
+      document.getElementById('dom').textContent = viewer.dom.querySelectorAll('.jc-line').length
+    }
+    viewer.on('render', stats)
+    append(500)
+    window.viewer = viewer
+  </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+import { defineTheme } from '../theme/theme.ts'
+
+/** Palette of the One Dark theme (Atom / VS Code One Dark Pro). */
+export const oneDarkPalette = {
+  background: '#282c34',
+  foreground: '#abb2bf',
+  comment: '#7f848e',
+  red: '#e06c75',
+  orange: '#d19a66',
+  yellow: '#e5c07b',
+  green: '#98c379',
+  cyan: '#56b6c2',
+  blue: '#61afef',
+  purple: '#c678dd',
+  gutter: '#495162',
+  selection: '#3e4451',
+  activeLine: '#2c313c',
+  caret: '#528bff',
+} as const
+
+const c = oneDarkPalette
+
+/** The default theme. */
+export const oneDark = defineTheme({
+  name: 'one-dark',
+  dark: true,
+  colors: {
+    background: c.background,
+    foreground: c.foreground,
+    caret: c.caret,
+    selection: '#3e4451',
+    selectionInactive: '#3a3f4b',
+    activeLine: c.activeLine,
+    gutterBackground: c.background,
+    gutterForeground: c.gutter,
+    gutterActiveForeground: '#abb2bf',
+    matchingBracket: '#515a6b66',
+    matchingBracketBorder: '#7f848e',
+    placeholder: '#5c6370',
+    scrollbar: '#4e566680',
+    scrollbarHover: '#5a6375b0',
+  },
+  tokens: {
+    comment: { color: c.comment, fontStyle: 'italic' },
+    'comment.tag': { color: c.purple, fontStyle: 'italic' },
+    keyword: c.purple,
+    operator: c.cyan,
+    punctuation: c.foreground,
+    'punctuation.special': c.purple,
+    string: c.green,
+    'string.escape': c.cyan,
+    regexp: c.cyan,
+    number: c.orange,
+    constant: c.orange,
+    variable: c.red,
+    'variable.language': c.red,
+    'variable.parameter': c.orange,
+    property: c.red,
+    function: c.blue,
+    type: c.yellow,
+    meta: c.blue,
+    tag: c.red,
+    attribute: c.orange,
+    heading: { color: c.red, fontWeight: 'bold' },
+    emphasis: { fontStyle: 'italic' },
+    strong: { fontWeight: 'bold' },
+    link: { color: c.blue, textDecoration: 'underline' },
+    inserted: c.green,
+    deleted: c.red,
+    invalid: { color: '#ffffff', background: '#e05252' },
+  },
+})
