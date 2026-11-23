@@ -6,6 +6,7 @@
  * editor's `phrases` option (`Copy`, `Cut`, `Paste`, `Select all`).
  */
 import type { Editor, Extension } from '../editor.ts'
+import type { PhraseKey } from '../phrases.ts'
 import { eqSel, isEmpty, selFrom, selTo, type Selection } from '../state/selection.ts'
 import { injectStyle } from '../view/style.ts'
 
@@ -145,7 +146,7 @@ export function touch(options: TouchOptions = {}): Extension {
         doc.execCommand('copy')
       }
     }
-    const actions: [string, () => void | Promise<void>][] = [
+    const actions: [PhraseKey, () => void | Promise<void>][] = [
       ['Copy', copy],
       ['Cut', async () => {
         await copy()
@@ -184,7 +185,7 @@ export function touch(options: TouchOptions = {}): Extension {
         const b = ed.coordsAtPos(selTo(range))
         startHandle.style.transform = `translate(${a.x}px,${a.bottom}px)`
         endHandle.style.transform = `translate(${b.x}px,${b.bottom}px)`
-        for (const btn of bar.children) (btn as HTMLElement).textContent = ed.phrase((btn as HTMLElement).dataset.action!)
+        for (const btn of bar.children) (btn as HTMLElement).textContent = ed.phrase((btn as HTMLElement).dataset.action as PhraseKey)
         // Above the selection, or below it when there is no room at the top of the viewport.
         const below = a.top - ed.scrollDOM.scrollTop < 52
         bar.classList.toggle('jc-below', below)

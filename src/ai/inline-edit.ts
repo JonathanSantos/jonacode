@@ -5,19 +5,21 @@
  * document isn't touched while it streams (keep editing elsewhere; the target
  * follows your edits). When it ends, the lines are replaced in one undo step,
  * unless you changed them meanwhile: then nothing is overwritten and the
- * result stays there to copy or ask again. With an empty selection the
+ * result stays there to copy or ask again (the same when something refuses the
+ * change, such as a read-only range). With an empty selection the
  * cursor's line is the target (on a blank line: code is written there).
  * Translate it with the `phrases` option.
  *
  * ```ts
  * inlineEdit(async function* ({ instruction, text, before, after, language }, signal) {
  *   yield* streamFromMyModel(`Rewrite this ${language} code: ${instruction}\n${text}`, signal)
- * }, { onApply: (ed, before) => setOriginal(ed, before) })   // review it with diffView
+ * }, { onApplied: (ed, before) => setOriginal(ed, before) })   // review it with diffView
  * ```
  */
 import { setDecorations, type Decoration } from '../decorations.ts'
 import type { Editor, Extension } from '../editor.ts'
 import type { Command, KeyBinding } from '../keymap.ts'
+import type { PhraseKey } from '../phrases.ts'
 import { selFrom, selTo } from '../state/selection.ts'
 import { cmpPos, mapPos, type Pos } from '../state/text.ts'
 import { tokenClass } from '../theme/theme.ts'
@@ -45,8 +47,14 @@ export type InlineEditSource = (request: InlineEditRequest, signal: AbortSignal)
   string | Promise<string> | AsyncIterable<string>
 
 export interface InlineEditOptions {
-  /** Called right before the replacement is applied, with the document before it — e.g. `(ed, before) => setOriginal(ed, before)` to review it with diffView. */
+  /** Called right before the replacement is applied, with the document before it and the range about to be replaced. */
   onApply?: (editor: Editor, before: string, range: { from: Pos; to: Pos }) => void
+  /**
+   * Called after the replacement is in the document (`editor.getValue()` is the new text), with the document
+   * before it and the range the new code takes — e.g. `(ed, before) => setOriginal(ed, before)` to review it
+   * with diffView. Not called when nothing was replaced.
+   */
+  onApplied?: (editor: Editor, before: string, range: { from: Pos; to: Pos }) => void
   /** Placeholder of the instruction field. */
   placeholder?: string
 }
@@ -130,7 +138,7 @@ export function inlineEdit(source: InlineEditSource, options: InlineEditOptions 
   return (editor) => {
     injectStyle(editor.dom, 'ai-inline-edit', INLINE_EDIT_CSS)
     const doc = editor.dom.ownerDocument
-    const t = (s: string) => editor.phrase(s)
+    const t = (s: PhraseKey, fallback?: string) => editor.phrase(s, fallback)
     const prompt = doc.createElement('div')
     prompt.className = 'jc-ie'
     prompt.innerHTML = '<div class="jc-ie-box"><span class="jc-ie-icon" aria-hidden="true">✦</span>' +
@@ -244,32 +252,52 @@ export function inlineEdit(source: InlineEditSource, options: InlineEditOptions 
       paint()
     }
 
+    /** Nothing was replaced: the answer stays in the preview, to copy or ask again. */
+    const keep = (session: Session, result: string, message: string) => {
+      Object.assign(session, { phase: 'done', result, message })
+      paint()
+    }
+
+    const hook = (name: 'onApply' | 'onApplied', before: string, range: { from: Pos; to: Pos }) => {
+      try {
+        options[name]?.(editor, before, range)
+      } catch (e) {
+        console.error(`[jonacode] ${name} failed`, e)
+      }
+    }
+
     const finish = (session: Session, result: string) => {
       const { from, to } = session
       if (cmpPos(from, to) > 0 || editor.doc.slice(from, to) !== session.text) {
-        Object.assign(session, { phase: 'done', result, message: t('The code changed while the AI was writing: nothing was replaced. Send again, or copy the result.') })
-        return paint()
+        return keep(session, result, t('inlineEdit.conflict', 'The code changed while the AI was writing: nothing was replaced. Send again, or copy the result.'))
       }
       const waiting = !editor.hasFocus
       const refocus = prompt.contains((prompt.getRootNode() as Document).activeElement)
-      last = input.value
-      input.value = ''
-      close()
+      let applied: { before: string; range: { from: Pos; to: Pos } } | undefined
       if (result !== session.text) {
-        try {
-          options.onApply?.(editor, editor.getValue(), { from, to })
-        } catch (e) {
-          console.error('[jonacode] onApply failed', e)
-        }
+        const before = editor.getValue()
+        hook('onApply', before, { from, to })
         const lines = result.split('\n')
         const end = { line: from.line + lines.length - 1, col: (lines.length > 1 ? 0 : from.col) + lines[lines.length - 1]!.length }
+        const version = editor.version
         // Someone typing elsewhere keeps their cursor; otherwise the new code is selected.
         editor.dispatch({
           changes: { from, to, insert: result }, origin: 'ai.edit',
           ...(waiting && { selection: { anchor: from, head: end }, scrollIntoView: true }),
         })
+        // A change filter said no (a read-only range…): the answer isn't thrown away.
+        if (editor.version === version) return keep(session, result, t('inlineEdit.rejected', 'This code can’t be changed here: nothing was replaced. Copy the result if you need it.'))
+        applied = { before, range: { from, to: end } }
       }
+      last = input.value
+      input.value = ''
+      // `onApply` may have closed or reopened the prompt: only this session is closed here.
+      if (s === session) close()
       if (refocus) editor.focus()
+      if (!applied) return
+      // Last, with the prompt gone (rendered away) and the focus settled: it may open a review, move the focus, swap extensions.
+      editor.flush()
+      hook('onApplied', applied.before, applied.range)
     }
 
     const submit = () => {

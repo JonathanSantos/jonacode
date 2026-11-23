@@ -6,10 +6,9 @@
  * someone actually edits one.
  */
 import { Editor, type EditorOptions } from './editor.ts'
-import { highlight, highlightStyles } from './highlight.ts'
+import { ensureHighlightStyles, highlight } from './highlight.ts'
 import { plainText } from './language/language.ts'
 import { oneDark } from './themes/one-dark.ts'
-import { injectStyle } from './view/style.ts'
 
 export interface LazyEditorOptions extends EditorOptions {
   /** When to create the editor. Default `'interaction'` (pointer down, tap or focus). */
@@ -38,9 +37,9 @@ export function lazyEditor(parent: HTMLElement, options: LazyEditorOptions = {})
   const theme = options.theme ?? oneDark
   let pre = parent.querySelector<HTMLElement>(':scope > .jc-static')
   if (!pre) {
-    injectStyle(parent, 'static' + theme.className, highlightStyles(theme))
+    ensureHighlightStyles(parent, theme)
     const tpl = parent.ownerDocument.createElement('template')
-    tpl.innerHTML = highlight(options.value ?? '', options.language ?? plainText, { theme, lineNumbers, tabSize: options.tabSize })
+    tpl.innerHTML = highlight(options.value ?? '', options.language ?? plainText, { theme, lineNumbers, tabSize: options.tabSize, padding: options.padding })
     pre = tpl.content.firstElementChild as HTMLElement
     parent.appendChild(pre)
   }

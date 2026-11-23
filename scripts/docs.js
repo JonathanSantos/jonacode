@@ -45,6 +45,8 @@ const sizes = {
     gotoLine: await extra(['gotoLine']),
     decorations: await extra(['setDecorations']),
     zones: await extra(['addZone', 'addWidget', 'addOverlay']),
+    lineWidgets: await extra(['lineWidgets']),
+    compartment: await extra(['compartment']),
     hoverTooltip: await extra(['hoverTooltip']),
     diagnostics: await extra(['diagnostics', 'linter']),
     autocomplete: await extra(['autocomplete']),

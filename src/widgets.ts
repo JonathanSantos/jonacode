@@ -35,6 +35,10 @@ export interface ZoneAction {
   /** Tooltip. */
   title?: string
   run: (editor: Editor, zone: Zone) => void
+  /** Shown dimmed; a click does nothing (a test that is running…). */
+  disabled?: boolean
+  /** Extra class(es) of the button. */
+  class?: string
 }
 
 export interface ZoneSpec {
@@ -45,6 +49,15 @@ export interface ZoneSpec {
   content?: WidgetContent
   /** A bar of clickable actions (like VS Code's CodeLens), aligned with the line's code. */
   actions?: readonly ZoneAction[]
+  /** A short text after the actions, which isn't a button (a result: "passed · 0.3 s"). */
+  status?: { text: string; class?: string } | null
+  /** What goes between two actions: a text (default `'|'`), or `false` for nothing. */
+  separator?: string | false
+  /**
+   * Clicks inside `content` don't take the focus from the editor (fields that
+   * are typed in still get it). The actions bar never takes it.
+   */
+  keepFocus?: boolean
   /** Height in px, or `'auto'` (default): the content's height, followed as it changes. */
   height?: number | 'auto'
   /** Height in lines (follows the font size); wins over `height`. */
@@ -73,7 +86,7 @@ export interface Zone {
   readonly side: 'above' | 'below'
   /** Current height (px). */
   readonly height: number
-  /** Changes the zone: line, content, height… (content and actions are rebuilt when given). */
+  /** Changes the zone: line, content, height… (the content is rebuilt when given; the actions bar when `actions`, `status` or `separator` are). */
   update(spec: Partial<ZoneSpec>): void
   remove(): void
 }
@@ -211,6 +224,9 @@ class ZoneImpl implements Zone {
   measured = -1
   /** Hidden by the last draw (folded, or far from the view once measured). */
   hiddenNow = false
+  /** What `spec.content` built, and the actions bar. */
+  body: HTMLElement | null = null
+  bar: HTMLElement | null = null
   last = { top: NaN, left: '', pad: '', height: '', display: '', visibility: '' }
 
   constructor(editor: Editor, st: State, spec: ZoneSpec) {
@@ -221,7 +237,12 @@ class ZoneImpl implements Zone {
     this.version = editor.version
     this.dom = editor.dom.ownerDocument.createElement('div')
     this.anchor = this.anchorAt(spec.line)
-    this.fill(true)
+    // The bar never takes the focus from the editor (its separators, status and disabled actions included).
+    this.dom.addEventListener('mousedown', (e) => {
+      const target = e.target as Element
+      if (target.closest('.jc-zone-actions') || (this.spec.keepFocus && !target.closest('input,textarea,select,[contenteditable]'))) e.preventDefault()
+    })
+    this.fill(true, true)
   }
 
   get line(): number {
@@ -252,16 +273,24 @@ class ZoneImpl implements Zone {
     return { line: l, col: this.side === 'above' ? 0 : doc.line(l).length }
   }
 
-  /** (Re)builds the content, the actions and the gutter element. */
-  fill(content: boolean): void {
+  /** (Re)builds the content and/or the actions bar (each keeps its elements otherwise), and the gutter element. */
+  fill(content: boolean, bar: boolean): void {
     const { editor, spec, dom } = this
     dom.style.cssText = ''
     classes(dom, 'jc-zone jc-ui' + (spec.scroll ? ' jc-zone-scroll' : '') + (spec.cover ? ' jc-zone-cover' : ''), spec.class)
+    // Each part is swapped on its own: a field with the focus inside `content` keeps it when only the bar changes.
     if (content) {
-      dom.replaceChildren()
-      const el = build(editor, spec.content, 'jc-zone-text')
-      if (el) dom.appendChild(el)
-      if (spec.actions?.length) dom.appendChild(actionsBar(editor, spec.actions, this))
+      const body = build(editor, spec.content, 'jc-zone-text')
+      if (body !== this.body) {
+        this.body?.remove()
+        this.body = body
+        if (body) dom.prepend(body)
+      }
+    }
+    if (bar) {
+      this.bar?.remove()
+      this.bar = spec.actions?.length || spec.status ? actionsBar(editor, spec, this) : null
+      if (this.bar) dom.append(this.bar)
     }
     this.margin?.remove()
     this.margin = null
@@ -283,7 +312,7 @@ class ZoneImpl implements Zone {
       this.version = this.editor.version
     }
     if ('height' in patch || 'lines' in patch) this.measured = -1
-    this.fill('content' in patch || 'actions' in patch)
+    this.fill('content' in patch, 'actions' in patch || 'status' in patch || 'separator' in patch)
     if (this.auto) this.st.resize?.observe(this.dom)
     else this.st.resize?.unobserve(this.dom)
     syncGaps(this.editor, this.st)
@@ -304,28 +333,30 @@ class ZoneImpl implements Zone {
   }
 }
 
-function actionsBar(editor: Editor, actions: readonly ZoneAction[], zone: Zone): HTMLElement {
+function actionsBar(editor: Editor, spec: ZoneSpec, zone: Zone): HTMLElement {
   const doc = editor.dom.ownerDocument
   const bar = doc.createElement('div')
-  bar.className = 'jc-zone-actions'
-  actions.forEach((a, i) => {
-    if (i) {
-      const sep = doc.createElement('span')
-      sep.className = 'jc-zone-sep'
-      sep.setAttribute('aria-hidden', 'true')
-      sep.textContent = '|'
-      bar.appendChild(sep)
-    }
+  const sep = spec.separator ?? '|'
+  bar.className = 'jc-zone-actions' + (sep ? '' : ' jc-zone-actions-plain')
+  const span = (cls: string, text: string, extra?: string) => {
+    const el = doc.createElement('span')
+    classes(el, cls, extra)
+    el.textContent = text
+    return bar.appendChild(el)
+  }
+  spec.actions?.forEach((a, i) => {
+    if (i && sep) span('jc-zone-sep', sep).setAttribute('aria-hidden', 'true')
     const b = doc.createElement('button')
     b.type = 'button'
-    b.className = 'jc-zone-action'
+    classes(b, 'jc-zone-action', a.class)
     b.textContent = a.label
     if (a.title) b.title = a.title
-    // A click runs the action without taking the focus from the editor.
-    b.addEventListener('mousedown', (e) => e.preventDefault())
-    b.addEventListener('click', () => a.run(editor, zone))
+    // Not the `disabled` attribute: a disabled button swallows the mouse down that keeps the focus in the editor.
+    if (a.disabled) b.setAttribute('aria-disabled', 'true')
+    else b.addEventListener('click', () => a.run(editor, zone))
     bar.appendChild(b)
   })
+  if (spec.status) span('jc-zone-status', spec.status.text, spec.status.class)
   return bar
 }
 
@@ -369,7 +400,7 @@ function drawZones(editor: Editor, st: State): void {
     }
     set(dom, last, 'height', 'height', z.auto ? '' : height + 'px')
     if (!spec.scroll) set(dom, last, 'left', 'left', (spec.cover ? 0 : gw) + 'px')
-    const indent = spec.indent ?? !!spec.actions?.length
+    const indent = spec.indent ?? !!z.bar
     let pad = ''
     if (indent) {
       const text = editor.doc.line(line)
@@ -565,7 +596,10 @@ user-select:text;-webkit-user-select:text;white-space:normal}
 font-size:.82em;line-height:1.5;color:color-mix(in srgb,var(--jc-fg) 55%,transparent)}
 .jc-zone-action{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;border-radius:3px}
 .jc-zone-action:hover,.jc-zone-action:focus-visible{color:var(--jc-caret);text-decoration:underline;outline:none}
+.jc-zone-action[aria-disabled=true]{opacity:.5;color:inherit;text-decoration:none;cursor:default}
 .jc-zone-sep{padding:0 .5em;opacity:.45}
+.jc-zone-actions-plain{column-gap:.9em}
+.jc-zone-status:not(:first-child){margin-left:.9em}
 .jc-content-widget{position:absolute;top:0;left:0;pointer-events:auto;cursor:auto;white-space:nowrap}
 .jc-widget-text,.jc-overlay-text{padding:2px 8px;border-radius:6px;font:12px/1.5 var(--jc-ui-font,system-ui,-apple-system,sans-serif);
 color:var(--jc-fg);background:color-mix(in srgb,var(--jc-bg) 88%,var(--jc-fg));border:1px solid color-mix(in srgb,var(--jc-fg) 16%,transparent)}

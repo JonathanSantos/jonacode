@@ -31,7 +31,9 @@ export const CodeEditor = defineComponent({
     readOnly: { type: Boolean, default: false },
     lineWrapping: { type: Boolean, default: false },
     tabSize: { type: Number, default: undefined },
-    insertSpaces: { type: Boolean, default: true },
+    // No default: the language's own (tabs for Go…) applies until the app says otherwise.
+    insertSpaces: { type: Boolean, default: undefined },
+    padding: { type: Object as PropType<EditorOptions['padding']>, default: undefined },
     placeholder: { type: String, default: undefined },
     minLines: { type: Number, default: undefined },
     maxLines: { type: Number, default: undefined },
@@ -59,6 +61,7 @@ export const CodeEditor = defineComponent({
       lineWrapping: props.lineWrapping,
       tabSize: props.tabSize,
       insertSpaces: props.insertSpaces,
+      padding: props.padding,
       placeholder: props.placeholder,
       minLines: props.minLines,
       maxLines: props.maxLines,

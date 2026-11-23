@@ -74,9 +74,13 @@ function CodeEditorImpl(props: CodeEditorProps, ref: ForwardedRef<Editor | null>
   }, [value])
 
   const { language, theme, readOnly, lineWrapping, tabSize, insertSpaces, placeholder, fontSize, fontFamily, lineHeight, minLines, maxLines } = options
+  // By value: an inline `padding={{ x: 4 }}` is a new object on every render.
+  const padX = options.padding?.x
+  const padY = options.padding?.y
   useEffect(() => {
-    editorRef.current?.setOptions({ language, theme, readOnly, lineWrapping, tabSize, insertSpaces, placeholder, fontSize, fontFamily, lineHeight, minLines, maxLines })
-  }, [language, theme, readOnly, lineWrapping, tabSize, insertSpaces, placeholder, fontSize, fontFamily, lineHeight, minLines, maxLines])
+    const padding = padX == null && padY == null ? undefined : { x: padX, y: padY }
+    editorRef.current?.setOptions({ language, theme, readOnly, lineWrapping, tabSize, insertSpaces, placeholder, fontSize, fontFamily, lineHeight, minLines, maxLines, padding })
+  }, [language, theme, readOnly, lineWrapping, tabSize, insertSpaces, placeholder, fontSize, fontFamily, lineHeight, minLines, maxLines, padX, padY])
 
   const firstExtensions = useRef(true)
   useEffect(() => {
@@ -92,7 +96,9 @@ function CodeEditorImpl(props: CodeEditorProps, ref: ForwardedRef<Editor | null>
 
 /**
  * Tip: keep `extensions` stable (define them outside the component or with
- * `useMemo`): a new array reinstalls them.
+ * `useMemo`). The extensions that are still in a new list stay installed, with
+ * their state; recreating them (`basicSetup()` on every render) reinstalls
+ * them. To swap one part, put a `compartment()` in the list.
  */
 export const CodeEditor = forwardRef(CodeEditorImpl) as (
   props: CodeEditorProps & RefAttributes<Editor | null>,

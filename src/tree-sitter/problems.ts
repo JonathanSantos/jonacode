@@ -5,6 +5,7 @@
  * without `fi`) and an unterminated string. Pure: works on the tree and the
  * document lines, so it runs anywhere (editor, worker, server, tests).
  */
+import type { PhraseKey } from '../phrases.ts'
 import type { ChangeSpec, Pos } from '../state/text.ts'
 import type { TSNode, TSPoint } from './types.ts'
 
@@ -69,8 +70,8 @@ function innermostError(err: TSNode): TSNode {
 }
 
 export function findSyntaxProblems(root: TSNode, lines: readonly string[], options: ProblemOptions = {}): SyntaxProblem[] {
-  const t = options.phrase ?? ((s: string) => s)
-  const say = (text: string, token = '') => t(text).replace('{token}', code(token))
+  const t = (text: PhraseKey) => options.phrase?.(text) ?? text
+  const say = (text: PhraseKey, token = '') => t(text).replace('{token}', code(token))
   const max = options.max ?? 200
   const grammar = options.grammar ?? ''
   const out: SyntaxProblem[] = []

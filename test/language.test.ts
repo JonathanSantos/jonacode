@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { Highlighter } from '../src/language/highlighter.ts'
-import { defineLanguage, words } from '../src/language/language.ts'
+import { defineLanguage, extendLanguage, words } from '../src/language/language.ts'
 import { TextDocument } from '../src/state/text.ts'
 import { tokenize } from './helpers.ts'
 
@@ -94,4 +94,18 @@ test('highlighter: respects the deadline', () => {
   assert.equal(hl.ensure(49_999, performance.now() - 1), false)
   assert.ok(hl.validUpTo < 49_999)
   assert.ok(hl.ensure(49_999))
+})
+
+test('indent: a language declares its defaults for the editor (tabs, width)', () => {
+  const go = defineLanguage({ name: 'go', states: { root: [] }, brackets: [['{', '}']], indent: { useTabs: true, size: 4 } })
+  assert.equal(go.indent.useTabs, true)
+  assert.equal(go.indent.size, 4)
+  // The bracket-based rules are still derived when only the defaults are given.
+  assert.ok(go.indent.increase?.test('func main() {'))
+  assert.ok(go.indent.decrease?.test('  }'))
+  const plain = defineLanguage({ name: 'plain2', states: { root: [] } })
+  assert.equal(plain.indent.useTabs, undefined)
+  assert.equal(plain.indent.size, undefined)
+  // Derived languages keep them.
+  assert.equal(extendLanguage(go, { name: 'go2' }).indent.useTabs, true)
 })

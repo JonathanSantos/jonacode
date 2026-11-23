@@ -107,6 +107,7 @@
         <li><a href="#extensoes" style="--c:var(--yellow);--w:26px"><i></i>Extensões e API</a>
           <ul class="sub">
             <li><a href="#extensoes/anatomia">Anatomia</a></li>
+            <li><a href="#extensoes/compartimentos">Trocar uma parte</a></li>
             <li><a href="#extensoes/incluidas">Extensões incluídas</a></li>
             <li><a href="#extensoes/busca">Busca e substituição</a></li>
             <li><a href="#extensoes/visualizador">Visualizador de logs</a></li>
@@ -349,12 +350,13 @@ const extensions = [lineNumbers(), highlightActiveLine(), bracketMatching(), clo
       <tr><td><code>language</code></td><td>Language</td><td>texto puro</td><td>Linguagem para o destaque de sintaxe.</td></tr>
       <tr><td><code>theme</code></td><td>Theme</td><td><code>oneDark</code></td><td>Tema de cores.</td></tr>
       <tr><td><code>extensions</code></td><td>Extension</td><td>—</td><td>Função, lista ou listas aninhadas de extensões.</td></tr>
-      <tr><td><code>tabSize</code></td><td>number</td><td><code>2</code></td><td>Largura do tab e da unidade de indentação.</td></tr>
-      <tr><td><code>insertSpaces</code></td><td>boolean</td><td><code>true</code></td><td>Indentar com espaços (ou com tab).</td></tr>
+      <tr><td><code>tabSize</code></td><td>number</td><td>o da linguagem, ou <code>2</code></td><td>Largura do tab e da unidade de indentação.</td></tr>
+      <tr><td><code>insertSpaces</code></td><td>boolean</td><td><code>true</code>, ou o da linguagem</td><td>Indentar com espaços (ou com tab). Uma linguagem pode pedir tab por padrão: <code>indent: { useTabs: true, size: 4 }</code> em <code>defineLanguage</code>.</td></tr>
+      <tr><td><code>padding</code></td><td>{ x?, y? }</td><td><code>{ x: 12, y: 8 }</code></td><td>Espaço em volta do texto, em px. Cliques, cursor e quebra de linha usam o mesmo valor (<code>editor.padding</code>).</td></tr>
       <tr><td><code>readOnly</code></td><td>boolean</td><td><code>false</code></td><td>Bloqueia edições do usuário (a API continua podendo editar).</td></tr>
       <tr><td><code>lineWrapping</code></td><td>boolean</td><td><code>false</code></td><td>Quebra linhas longas na largura do editor (sem rolagem horizontal).</td></tr>
       <tr><td><code>minLines</code> · <code>maxLines</code></td><td>number</td><td>—</td><td>Altura mínima e máxima em linhas. Sem altura no elemento pai, o editor cresce com o conteúdo (e continua virtualizado); passando de <code>maxLines</code>, rola por dentro.</td></tr>
-      <tr><td><code>phrases</code></td><td>Record</td><td>—</td><td>Traduções dos textos de interface (busca, barra de toque): <code>{ Find: 'Buscar' }</code>.</td></tr>
+      <tr><td><code>phrases</code></td><td>Phrases</td><td>—</td><td>Traduções dos textos de interface: <code>{ Find: 'Buscar' }</code>, ou o pacote pronto <code>ptBR</code> de <code>jonacode/locales/pt-BR</code>. As chaves estão todas em <code>PHRASES</code>, e uma chave errada não compila.</td></tr>
       <tr><td><code>placeholder</code></td><td>string</td><td>—</td><td>Texto mostrado quando o documento está vazio.</td></tr>
       <tr><td><code>fontSize</code> · <code>fontFamily</code> · <code>lineHeight</code></td><td>number | string</td><td>14 · JetBrains Mono… · 1.6</td><td>Tipografia (vira variável CSS). Qualquer fonte, inclusive proporcional; veja <a href="#por-dentro/fontes">fontes e tamanhos</a>.</td></tr>
       <tr><td><code>autofocus</code></td><td>boolean</td><td><code>false</code></td><td>Foca ao criar.</td></tr>
@@ -362,7 +364,8 @@ const extensions = [lineNumbers(), highlightActiveLine(), bracketMatching(), clo
       <tr><td><code>className</code> · <code>ariaLabel</code></td><td>string</td><td>—</td><td>Classe extra na raiz e rótulo acessível.</td></tr>
     </tbody>
   </table></div>
-  <p class="note">Tudo pode mudar depois com <code>editor.setOptions({ ... })</code>, inclusive <code>language</code>, <code>theme</code> e <code>extensions</code>.</p>
+  <p class="note">Tudo pode mudar depois com <code>editor.setOptions({ ... })</code>, inclusive <code>language</code>, <code>theme</code> e <code>extensions</code>. <code>setOptions({ fontSize })</code> e <code>setOptions({ padding })</code> refazem as medidas na hora.</p>
+  <p>O espaço à esquerda do código soma três coisas, e as três se ajustam: o recuo do texto (<code>padding.x</code>), o espaço em volta dos números (<code>lineNumbers({ padding: 4 })</code>) e a calha dos diagnósticos, que pode ser estreitada (<code>diagnostics({ gutterWidth: 8 })</code>) ou sumir, com a marca desenhada no próprio número (<code>diagnostics({ gutter: 'line-numbers' })</code>).</p>
 
   <h2 id="api">Controlando o editor</h2>
   <p>Clique nos botões: cada um executa o código mostrado ao lado no editor abaixo.</p>
@@ -376,7 +379,7 @@ const extensions = [lineNumbers(), highlightActiveLine(), bracketMatching(), clo
   <p>Para blocos de código que ninguém vai editar (um blog, uma página de documentação), você não precisa do editor. <code>highlight()</code> usa as mesmas gramáticas e temas e devolve uma string de HTML, sem tocar no DOM: roda no servidor, num gerador de site estático ou no navegador.</p>
   <div class="grid2">
     <textarea class="snippet" data-lang="js" data-file="build.js">// No servidor (Node, Deno, Bun…) ou no navegador
-import { highlight, highlightStyles } from 'jonacode/highlight'
+import { highlight, highlightStyles, ensureHighlightStyles } from 'jonacode/highlight'
 import { javascript } from 'jonacode/languages/javascript'
 import { oneDark } from 'jonacode/themes/one-dark'
 
@@ -384,14 +387,15 @@ const html = highlight(codigo, javascript, {
   theme: oneDark,
   lineNumbers: true,   // números com contadores CSS: não vão junto na cópia
 })
-const css = highlightStyles(oneDark) // uma vez por página</textarea>
+const css = highlightStyles(oneDark)       // no servidor: o CSS como string, uma vez por página
+ensureHighlightStyles(document, oneDark)   // no navegador: põe o CSS na página, só na primeira vez</textarea>
     <textarea class="snippet" data-lang="js" data-file="blog.js">// Ou destaque os <pre><code class="language-js"> que já estão na página,
 // como o Prism e o highlight.js fazem:
 import { highlightAll } from 'jonacode/highlight'
 import { javascript } from 'jonacode/languages/javascript'
 import { css } from 'jonacode/languages/css'
 
-highlightAll({ languages: [javascript, css], theme: oneDark })</textarea>
+highlightAll({ languages: [javascript, css], theme: oneDark })   // já cuida do CSS</textarea>
   </div>
   <p class="note">Só o destacador, com JavaScript e o One Dark, pesa <strong id="static-size">~6 kB</strong> gzip, sem nada do editor.</p>
 
@@ -1140,7 +1144,7 @@ editor.changeByRange((range) => {
 <section class="page" data-page="extensoes" data-color="yellow" data-title="Extensões e API">
   <div class="eyebrow">capítulo 7 <span>· extensões e API</span></div>
   <h1>Extensões são <em>funções</em>.</h1>
-  <p class="lead">Uma extensão recebe o editor e usa a API pública para se registrar. Pode devolver uma função de limpeza. Tudo o que ela registra é desfeito automaticamente em <code>setExtensions()</code> ou <code>destroy()</code>.</p>
+  <p class="lead">Uma extensão recebe o editor e usa a API pública para se registrar. Pode devolver uma função de limpeza. Tudo o que ela registra é desfeito automaticamente quando ela sai da lista ou em <code>destroy()</code>.</p>
 
   <h2 id="anatomia">Anatomia</h2>
   <div class="hooks">
@@ -1154,6 +1158,23 @@ editor.changeByRange((range) => {
     <div class="hook"><code>addChangeFilter(fn)</code><p>Veta uma transação inteira antes de ela valer (trechos protegidos, limites).</p></div>
     <div class="hook"><code>addMouseHandler(fn)</code><p>Trata o clique antes do editor; devolva <code>true</code> para ficar com ele.</p></div>
   </div>
+
+  <h2 id="compartimentos">Trocar uma parte sem perder o resto</h2>
+  <p>Ligar e desligar uma parte das extensões (a revisão de mudanças, por exemplo) não precisa desmontar as outras. Um <strong>compartimento</strong>, como no CodeMirror 6, guarda uma parte da lista que pode ser trocada sozinha: o que está fora dele continua instalado, com o estado que tinha, como as faixas travadas e os diagnósticos.</p>
+  <textarea class="snippet" data-lang="js" data-file="revisao.js">import { compartment, createEditor, basicSetup, readOnlyRanges, diagnostics, diffView } from 'jonacode'
+
+const revisao = compartment()
+const editor = createEditor(el, {
+  extensions: [basicSetup(), readOnlyRanges(travas), diagnostics(), revisao.of(null)],
+})
+
+revisao.reconfigure(editor, diffView({ original }))   // só esta parte é trocada
+revisao.reconfigure(editor, null)                     // as travas e os diagnósticos continuam lá</textarea>
+  <ul class="list">
+    <li><b>A ordem é a da lista:</b> o que um compartimento instala fica no lugar dele. Uma calha nova entra onde entraria numa lista montada do zero, e um atalho continua valendo antes dos das extensões seguintes.</li>
+    <li><b><code>setExtensions(lista)</code> também preserva:</b> as extensões que continuam na lista (a mesma função, na mesma ordem relativa) ficam instaladas com o estado delas. Guarde as extensões em vez de recriá-las: <code>basicSetup()</code> chamado de novo devolve funções novas.</li>
+    <li><b>Zonas, widgets e marcações</b> criados com <code>addZone</code>, <code>addWidget</code>, <code>addOverlay</code> e <code>setDecorations</code> não são de nenhuma extensão: sobrevivem a qualquer troca, no mesmo elemento e na mesma linha.</li>
+  </ul>
 
   <h2 id="incluidas">Extensões incluídas</h2>
   <p>Todas são opcionais e independentes. O tamanho é o acréscimo real ao bundle (gzip) quando você a importa.</p>
@@ -1274,6 +1295,18 @@ addZone(editor, { line: 3, content: banner, cover: true })   // cobre também o 
 // Flutuando sobre o texto, sem ocupar espaço; e fixo num canto
 addWidget(editor, { pos: editor.selection.head, content: botao, place: 'above' })
 addOverlay(editor, { content: 'JavaScript · UTF-8', position: 'bottom-right' })</textarea>
+  <p>A barra de <code>actions</code> aceita mais do que botões: cada ação pode vir <code>disabled</code> (um teste rodando) ou com uma <code>class</code>, <code>status</code> põe um texto depois delas (o resultado: “passou · 0,3 s”) e <code>separator</code> troca ou tira o <code>|</code>. Numa barra sua dentro de <code>content</code>, <code>keepFocus: true</code> faz os cliques não tirarem o foco do editor.</p>
+  <p>As barras do editor acima não são criadas uma a uma: vêm de <code>lineWidgets(fonte)</code>. A função diz quais marcas o documento deve ter, e o Jonacode cria, move, atualiza e remove as zonas comparando por <code>key</code>, depois de cada edição. Uma marca com a mesma chave é a mesma zona, com os mesmos elementos.</p>
+  <textarea class="snippet" data-lang="js" data-file="testes.js">import { lineWidgets, refreshLineWidgets } from 'jonacode'
+
+lineWidgets((doc) => acharTestes(doc.lines).map((t) => ({
+  key: t.nome,                               // a identidade entre uma rodada e outra
+  line: t.linha,
+  actions: [{ label: '▶ Rodar', run: () => rodar(t.nome), disabled: rodando.has(t.nome) }],
+  status: resultados[t.nome] && { text: resultados[t.nome] },
+})), { delay: 250 })
+
+refreshLineWidgets(editor)                   // um resultado chegou: recalcula agora</textarea>
   <p class="note">O módulo pesa <span class="mono" data-size="zones"></span> com os três. Por baixo está <code>editor.setLineGaps(nome, lacunas)</code>, que reserva espaço (em px ou em linhas) acima ou abaixo de linhas, e <code>addLayer({ fixed: true })</code>, uma camada que não rola para o lado. Os blocos de <code>setDecorations</code>, o diff inline e o merge usam a mesma base.</p>
 
   <h2 id="diagnosticos">Diagnósticos e tooltips <span class="tag">ao vivo</span></h2>
@@ -1655,7 +1688,8 @@ inlineSuggestion(async function* ({ prefix, suffix, language }, signal) {
 import { setOriginal } from 'jonacode'
 
 inlineEdit(({ instruction, text, before, after, language }, signal) => chamarModelo({ instruction, text }, signal), {
-  onApply: (editor, antes) => setOriginal(editor, antes),   // revisar com diffView
+  // depois de o texto novo entrar: editor.getValue() já é o novo
+  onApplied: (editor, antes) => setOriginal(editor, antes),   // revisar com diffView
 })</textarea>
 
   <h2 id="navegador">Agentes de navegador</h2>
@@ -1679,10 +1713,13 @@ inlineEdit(({ instruction, text, before, after, language }, signal) => chamarMod
   </div>
   <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">exercicio.js</span></div><div id="protect-editor" style="height:240px"></div></div>
   <pre class="agent-result mono" id="protect-result"></pre>
-  <textarea class="snippet" data-lang="js">import { readOnlyRanges, lineRange } from 'jonacode'
+  <textarea class="snippet" data-lang="js">import { readOnlyRanges, setReadOnlyRanges, lineRange } from 'jonacode'
 import { editorTools } from 'jonacode/ai'
 
 createEditor(el, { extensions: [basicSetup(), linter(meuLinter), readOnlyRanges([{ from: inicio, to: fim }])] })
+
+// "Só as linhas 27 a 29 são suas": com sticky, nada entra antes da linha 1 nem depois da última
+setReadOnlyRanges(editor, [lineRange(editor, 1, 26, { sticky: true }), lineRange(editor, 30, Infinity, { sticky: true })])
 
 const tools = editorTools(editor, {
   verify: (ed) => meuLinter(ed),   // opcional: por padrão lê os diagnósticos depois que o linter roda

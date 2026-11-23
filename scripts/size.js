@@ -21,6 +21,8 @@ const scenarios = {
 const extensions = {
   'decorations (setDecorations)': 'setDecorations',
   'zones, widgets and overlays (addZone, addWidget, addOverlay)': 'addZone, addWidget, addOverlay',
+  'lineWidgets() (with zones)': 'lineWidgets',
+  'compartment()': 'compartment',
   'hoverTooltip()': 'hoverTooltip',
   'linter() + diagnostics': 'linter',
   'autocomplete()': 'autocomplete',

@@ -1,6 +1,6 @@
 {
   "name": "jonacode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A tiny, modular and virtualized code editor for the web. Zero dependencies, tree-shakable, themeable, works with plain HTML, React, Vue, Angular…",
   "keywords": [
     "code-editor",
@@ -49,6 +49,10 @@
       "types": "./dist/themes/*.d.ts",
       "default": "./dist/themes/*.js"
     },
+    "./locales/*": {
+      "types": "./dist/locales/*.d.ts",
+      "default": "./dist/locales/*.js"
+    },
     "./element": {
       "types": "./dist/adapters/element.d.ts",
       "default": "./dist/adapters/element.js"
@@ -92,10 +96,12 @@
   "files": [
     "dist",
     "src",
-    "assets/logo.svg"
+    "assets/logo.svg",
+    "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/bundle.js",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/fix-dts.js && node scripts/bundle.js",
+    "check:package": "node scripts/check-package.js",
     "dev": "node scripts/dev.js",
     "docs": "node scripts/docs.js",
     "typecheck": "tsc -p tsconfig.json",
@@ -109,8 +115,8 @@
     "e2e:webkit": "playwright test --project=webkit",
     "e2e:install": "playwright install chromium firefox webkit",
     "e2e:report": "playwright show-report",
-    "ci": "npm run typecheck && npm test && npm run build && npm run size:check && npm run e2e",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "ci": "npm run typecheck && npm test && npm run build && npm run check:package && npm run size:check && npm run e2e",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build && npm run check:package"
   },
   "peerDependencies": {
     "react": ">=17",

@@ -119,6 +119,10 @@ export interface LanguageSpec {
     increase?: RegExp | null
     /** Tested against a line while typing: outdent it (e.g. a line starting with `}`). */
     decrease?: RegExp | null
+    /** This language is indented with tabs (Go, Makefile…): the editor's default for `insertSpaces` becomes false. */
+    useTabs?: boolean
+    /** The usual indentation width of this language: the editor's default for `tabSize`. */
+    size?: number
   }
   /** Extra chars considered part of words (e.g. `$` for JavaScript). */
   wordChars?: string
@@ -199,7 +203,8 @@ export interface Language {
   readonly comments: { readonly line?: string; readonly block?: readonly [string, string] }
   readonly brackets: readonly (readonly [string, string])[]
   readonly closePairs: readonly (readonly [string, string])[]
-  readonly indent: { readonly increase: RegExp | null; readonly decrease: RegExp | null }
+  /** `useTabs` and `size` are the language's defaults for the editor's `insertSpaces` and `tabSize` (an option given to the editor wins). */
+  readonly indent: { readonly increase: RegExp | null; readonly decrease: RegExp | null; readonly useTabs?: boolean; readonly size?: number }
   readonly wordChars: string
   /** Words suggested by `autocomplete()`. */
   readonly completions: readonly string[]
@@ -459,6 +464,8 @@ export function defineLanguage(spec: LanguageSpec, options: { prefilter?: boolea
     indent: {
       increase: spec.indent?.increase !== undefined ? spec.indent.increase : defaultIncrease(brackets),
       decrease: spec.indent?.decrease !== undefined ? spec.indent.decrease : defaultDecrease(brackets),
+      useTabs: spec.indent?.useTabs,
+      size: spec.indent?.size,
     },
     wordChars: spec.wordChars ?? '',
     completions: spec.completions ?? [],

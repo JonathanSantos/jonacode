@@ -11,11 +11,12 @@ export function setStyleNonce(nonce: string | undefined): void {
 export function injectStyle(target: Node, id: string, css: string): void {
   const root = target.getRootNode()
   const isShadow = typeof ShadowRoot !== 'undefined' && root instanceof ShadowRoot
-  const host: Node = isShadow ? root : (target.ownerDocument ?? document)
+  // A document has no `ownerDocument`: it is the document.
+  const doc = (target.ownerDocument ?? target) as Document
+  const host: Node = isShadow ? root : doc
   let map = injected.get(host)
   if (!map) injected.set(host, (map = new Map()))
   if (map.has(id)) return
-  const doc = target.ownerDocument ?? document
   const style = doc.createElement('style')
   style.setAttribute('data-jonacode', id)
   if (styleNonce) style.nonce = styleNonce
@@ -44,7 +45,7 @@ scrollbar-width:thin;scrollbar-color:var(--jc-scrollbar) transparent}
 border-right:1px solid var(--jc-gutter-border);color:var(--jc-gutter-foreground);user-select:none;-webkit-user-select:none}
 .jc-gutter{position:relative;flex:none}
 .jc-gutter-cell{position:absolute;left:0;right:0;height:var(--jc-lh);line-height:var(--jc-lh);white-space:nowrap;overflow:hidden}
-.jc-gutter-lines .jc-gutter-cell{text-align:right;padding:0 10px 0 16px;color:var(--jc-gutter-foreground);font-variant-numeric:tabular-nums}
+.jc-gutter-lines .jc-gutter-cell{text-align:right;padding:0 var(--jc-ln-pad-r,10px) 0 var(--jc-ln-pad-l,16px);color:var(--jc-gutter-foreground);font-variant-numeric:tabular-nums}
 .jc-gutter-lines .jc-gutter-cell.jc-active{color:var(--jc-gutter-active-foreground)}
 .jc-content{position:relative;flex:1 0 auto;cursor:text;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-touch-callout:none}
 .jc-wrap .jc-scroller{overflow-x:hidden;scrollbar-gutter:stable}

@@ -10,6 +10,7 @@ const outdir = join(root, 'e2e/.build')
 export default async function globalSetup() {
   const languages = readdirSync(join(root, 'src/languages')).filter((f) => f.endsWith('.ts')).sort()
   const themes = readdirSync(join(root, 'src/themes')).filter((f) => f.endsWith('.ts')).sort()
+  const locales = readdirSync(join(root, 'src/locales')).filter((f) => f.endsWith('.ts')).sort()
   rmSync(outdir, { recursive: true, force: true })
   const started = performance.now()
   await build({
@@ -19,6 +20,7 @@ export default async function globalSetup() {
       'src/adapters/element.ts',
       ...languages.map((f) => `src/languages/${f}`),
       ...themes.map((f) => `src/themes/${f}`),
+      ...locales.map((f) => `src/locales/${f}`),
     ],
     outbase: 'src',
     outdir,
@@ -35,7 +37,7 @@ export default async function globalSetup() {
   await build({ absWorkingDir: root, entryPoints: ['e2e/yjs-entry.ts'], outfile: join(outdir, 'yjs.js'), bundle: true, format: 'esm', target: 'es2022', logLevel: 'warning' })
   // `all.js`: every export in one namespace, for `window.J` in the fixture page.
   const modules = ['./index.js', './adapters/element.js', ...languages.map((f) => `./languages/${f.replace(/\.ts$/, '.js')}`),
-    ...themes.map((f) => `./themes/${f.replace(/\.ts$/, '.js')}`)]
+    ...themes.map((f) => `./themes/${f.replace(/\.ts$/, '.js')}`), ...locales.map((f) => `./locales/${f.replace(/\.ts$/, '.js')}`)]
   writeFileSync(join(outdir, 'all.js'), modules.map((m, i) => `import * as m${i} from '${m}'`).join('\n') +
     `\nexport default Object.assign({}, ${modules.map((_, i) => `m${i}`).join(', ')})\n`)
   console.log(`[e2e] bundled src/ into e2e/.build in ${Math.round(performance.now() - started)} ms`)

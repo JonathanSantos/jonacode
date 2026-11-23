@@ -1,12 +1,15 @@
 /**
  * Read-only ranges: regions of the document nobody can change — not the
  * user, not commands, not an AI (its edits fail with a message). Typing right
- * before or after a region works; undo and redo always do. The regions follow
- * the edits around them.
+ * before or after a region works, unless that edge is inclusive
+ * (`inclusiveStart` / `inclusiveEnd`, or `sticky` for the ends of the
+ * document); undo and redo always do. The regions follow the edits around them.
  *
  * ```ts
- * createEditor(el, { extensions: [readOnlyRanges([lineRange(editor, 1, 3)])] })
+ * createEditor(el, { extensions: [readOnlyRanges([])] })
  * setReadOnlyRanges(editor, [{ from: { line: 10, col: 0 }, to: { line: 12, col: 1 } }])
+ * // "Only lines 27 to 29 are yours": nothing can be typed before line 1 or after the last one either.
+ * setReadOnlyRanges(editor, [lineRange(editor, 1, 26, { sticky: true }), lineRange(editor, 30, Infinity, { sticky: true })])
  * ```
  */
 import { setDecorations, type Decoration } from '../decorations.ts'
@@ -17,6 +20,10 @@ import { injectStyle } from '../view/style.ts'
 export interface ProtectedRange {
   from: Pos
   to: Pos
+  /** Inserting exactly at `from` is refused too (by default, text typed right before a range stays out of it). */
+  inclusiveStart?: boolean
+  /** Inserting exactly at `to` is refused too. */
+  inclusiveEnd?: boolean
 }
 
 export interface ReadOnlyRangesOptions {
@@ -35,14 +42,19 @@ interface State {
 const SET = 'readonly'
 const states = new WeakMap<Editor, State>()
 
-/** Whether a change touches a range: removes a char inside it or inserts strictly inside it. */
-function blocks(r: ProtectedRange, c: Change): boolean {
-  return cmpPos(c.from, c.to) < 0
-    ? cmpPos(c.from, r.to) < 0 && cmpPos(c.to, r.from) > 0
-    : cmpPos(c.from, r.from) > 0 && cmpPos(c.from, r.to) < 0
+/** Whether a change touches a range: removes a char inside it, or inserts inside it (at an edge only when that edge is inclusive). */
+export function blocksChange(r: ProtectedRange, c: Change): boolean {
+  if (cmpPos(c.from, c.to) < 0) return cmpPos(c.from, r.to) < 0 && cmpPos(c.to, r.from) > 0
+  const start = cmpPos(c.from, r.from)
+  const end = cmpPos(c.from, r.to)
+  return (start > 0 || (!start && !!r.inclusiveStart)) && (end < 0 || (!end && !!r.inclusiveEnd))
 }
 
-/** Ranges after changes: text inserted at their edges stays outside; emptied ranges go away. */
+/**
+ * Ranges after changes: text inserted at their edges stays outside (a range
+ * never grows: at an inclusive edge only undo, redo and remote edits get to
+ * insert); emptied ranges go away.
+ */
 function mapRanges(ranges: readonly ProtectedRange[], changes: readonly Change[]): ProtectedRange[] {
   const out: ProtectedRange[] = []
   for (const r of ranges) {
@@ -51,7 +63,7 @@ function mapRanges(ranges: readonly ProtectedRange[], changes: readonly Change[]
       from = mapPos(from, c, 1)
       to = mapPos(to, c, -1)
     }
-    if (cmpPos(from, to) < 0) out.push(from === r.from && to === r.to ? r : { from, to })
+    if (cmpPos(from, to) < 0) out.push(from === r.from && to === r.to ? r : { ...r, from, to })
   }
   return out
 }
@@ -73,15 +85,19 @@ function draw(editor: Editor, st: State): void {
   setDecorations(editor, SET, decos)
 }
 
+/** Installed on first use, for as long as the extension is there (or for good, through `setReadOnlyRanges` alone). */
 function install(editor: Editor): State {
-  let st = states.get(editor)
-  if (st) return st
+  return states.get(editor) ?? editor.untracked(() => setup(editor))
+}
+
+function setup(editor: Editor): State {
+  let st: State | undefined
   const offFilter = editor.addChangeFilter((changes, origin, ed) => {
     // Undo / redo, and edits from other people in a collaborative session, aren't this user's typing.
     if (origin === 'undo' || origin === 'redo' || origin === 'setValue' || origin === 'remote') return true
     let ranges: readonly ProtectedRange[] = st!.ranges
     for (const c of changes) {
-      if (ranges.some((r) => blocks(r, c))) {
+      if (ranges.some((r) => blocksChange(r, c))) {
         st!.options.onReject?.(ed, origin)
         return false
       }
@@ -131,9 +147,14 @@ export function setReadOnlyRanges(editor: Editor, ranges: readonly ProtectedRang
   const st = install(editor)
   st.ranges = ranges
     .map((r) => {
-      const a = editor.doc.clamp(r.from)
-      const b = editor.doc.clamp(r.to)
-      return cmpPos(a, b) <= 0 ? { from: a, to: b } : { from: b, to: a }
+      const from = editor.doc.clamp(r.from)
+      const to = editor.doc.clamp(r.to)
+      if (cmpPos(from, to) <= 0) return { ...r, from, to }
+      // Given backwards: the edges swap with their flags.
+      const out: ProtectedRange = { from: to, to: from }
+      if (r.inclusiveEnd) out.inclusiveStart = true
+      if (r.inclusiveStart) out.inclusiveEnd = true
+      return out
     })
     .filter((r) => cmpPos(r.from, r.to) < 0)
     .sort((a, b) => cmpPos(a.from, b.from))
@@ -145,12 +166,20 @@ export function getReadOnlyRanges(editor: Editor): ProtectedRange[] {
   return states.get(editor)?.ranges.slice() ?? []
 }
 
-/** Whole lines `fromLine..toLine` (1-based, inclusive) as a range: start of the first to end of the last. */
-export function lineRange(editor: Editor, fromLine: number, toLine: number): ProtectedRange {
+/**
+ * Whole lines `fromLine..toLine` (1-based, inclusive) as a range: start of the
+ * first to end of the last. With `sticky`, an edge at the very start or end of
+ * the document is inclusive: nothing can be typed before the first line or
+ * after the last one.
+ */
+export function lineRange(editor: Editor, fromLine: number, toLine: number, options: { sticky?: boolean } = {}): ProtectedRange {
   const last = editor.doc.lineCount - 1
   const a = Math.max(0, Math.min(last, fromLine - 1))
   const b = Math.max(a, Math.min(last, toLine - 1))
-  return { from: { line: a, col: 0 }, to: { line: b, col: editor.doc.line(b).length } }
+  const range: ProtectedRange = { from: { line: a, col: 0 }, to: { line: b, col: editor.doc.line(b).length } }
+  if (options.sticky && !a) range.inclusiveStart = true
+  if (options.sticky && b === last) range.inclusiveEnd = true
+  return range
 }
 
 const READONLY_CSS = `

@@ -128,4 +128,53 @@ test.describe('static highlighting', () => {
     await page.keyboard.type('// ')
     expect(await page.evaluate(() => ed.doc.line(0))).toBe('// function add(a, b) {')
   })
+
+  test('highlightAll() with a theme colors a clean page on its own, and adds its CSS only once', async ({ page }) => {
+    const out = await page.evaluate((code) => {
+      const app = document.getElementById('app')!
+      const block = () => `<pre><code class="language-js">${code}</code></pre>`
+      app.innerHTML = block()
+      const before = document.querySelectorAll('style[data-jonacode]').length
+      const n = J.highlightAll({ root: app, theme: J.oneLight, languages: [J.javascript] })
+      const keyword = app.querySelector('.jc-static .jc-t-keyword')!
+      const first = { n, before, color: getComputedStyle(keyword).color, plain: getComputedStyle(app).color, bg: getComputedStyle(app.querySelector('.jc-static')!).backgroundColor }
+      // Again, then an editor with the same theme: nothing is added twice.
+      const styles = () => [...document.querySelectorAll('style[data-jonacode]')].map((el) => el.getAttribute('data-jonacode'))
+      const once = styles()
+      app.insertAdjacentHTML('beforeend', block())
+      J.highlightAll({ root: app, theme: J.oneLight, languages: [J.javascript] })
+      J.ensureHighlightStyles(document, J.oneLight)
+      const host = app.appendChild(document.createElement('div'))
+      J.createEditor(host, { value: code, theme: J.oneLight }).destroy()
+      return { ...first, once, after: styles().filter((id) => once.includes(id)) }
+    }, CODE)
+    expect(out.n).toBe(1)
+    expect(out.before).toBe(0)
+    expect(out.color).not.toBe(out.plain)
+    expect(out.bg).toBe('rgb(250, 250, 250)')
+    expect(out.once).toEqual(['static', 'jc-theme-one-light'])
+    expect(out.after).toEqual(out.once)
+  })
+
+  test('highlightAll() inside a shadow root puts the CSS in that shadow root', async ({ page }) => {
+    const out = await page.evaluate((code) => {
+      const host = document.getElementById('app')!.appendChild(document.createElement('div'))
+      const shadow = host.attachShadow({ mode: 'open' })
+      shadow.innerHTML = `<pre><code data-language="javascript">${code}</code></pre>`
+      const n = J.highlightAll({ root: shadow, theme: J.oneDark, languages: [J.javascript] })
+      const keyword = shadow.querySelector('.jc-static .jc-t-keyword')!
+      return {
+        n,
+        color: getComputedStyle(keyword).color,
+        bg: getComputedStyle(shadow.querySelector('.jc-static')!).backgroundColor,
+        inShadow: [...shadow.querySelectorAll('style[data-jonacode]')].map((el) => el.getAttribute('data-jonacode')),
+        inPage: document.querySelectorAll('style[data-jonacode]').length,
+      }
+    }, CODE)
+    expect(out.n).toBe(1)
+    expect(out.color).toBe('rgb(198, 120, 221)')
+    expect(out.bg).toBe('rgb(40, 44, 52)')
+    expect(out.inShadow.sort()).toEqual(['jc-theme-one-dark', 'static'].sort())
+    expect(out.inPage).toBe(0)
+  })
 })

@@ -22,6 +22,7 @@
 import type { ChangeEvent, Editor, Extension } from '../editor.ts'
 import { diagnostics, setDiagnostics, type Diagnostic, type DiagnosticsOptions } from '../extensions/diagnostics.ts'
 import type { Command, KeyBinding } from '../keymap.ts'
+import type { PhraseKey } from '../phrases.ts'
 import { cmpPos, type Pos } from '../state/text.ts'
 import { FENCE_ALIASES, type GrammarSource, type Grammars } from './grammars.ts'
 import { LineOffsets } from '../state/offsets.ts'
@@ -284,7 +285,7 @@ function finish(eng: Engine, tree: TSTree | null): void {
 function refresh(eng: Engine): void {
   const { editor, options } = eng
   const lines = editor.doc.lines
-  const phrase = (s: string) => editor.phrase(s)
+  const phrase = (s: string) => editor.phrase(s as PhraseKey)
   const problems = eng.tree ? findSyntaxProblems(eng.tree.rootNode, lines, { phrase, grammar: eng.language }) : []
   if (options.nested !== false) {
     const input = reader(() => editor.doc.lines)

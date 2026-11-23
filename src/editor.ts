@@ -12,6 +12,7 @@ import {
   type EditorSelection, type Selection, type SelectionInput,
 } from './state/selection.ts'
 import { changeEnd, cmpPos, spliceArray, splitLines, TextDocument, type Change, type ChangeSpec, type Pos } from './state/text.ts'
+import type { PhraseKey, Phrases } from './phrases.ts'
 import { tokenClass, type Theme } from './theme/theme.ts'
 import { oneDark } from './themes/one-dark.ts'
 import {
@@ -32,9 +33,9 @@ export interface EditorOptions {
   theme?: Theme
   /** Extensions (line numbers, bracket matching…). See `basicSetup()`. */
   extensions?: Extension
-  /** Width of a tab / indentation unit. Default 2. */
+  /** Width of a tab / indentation unit. Default: the language's (`indent.size`), or 2. */
   tabSize?: number
-  /** Indent with spaces (default) or tabs. */
+  /** Indent with spaces or tabs. Default: spaces, unless the language is indented with tabs (`indent.useTabs`). */
   insertSpaces?: boolean
   readOnly?: boolean
   /** Wrap long lines at the editor width instead of scrolling horizontally. Default false. */
@@ -53,13 +54,18 @@ export interface EditorOptions {
   fontFamily?: string
   /** Line height (number = multiplier of the font size, or a CSS length). Default 1.6. */
   lineHeight?: number | string
+  /** Space around the text, in px: `x` before each line (default 12), `y` above the first and below the last (default 8). */
+  padding?: { x?: number; y?: number }
   autofocus?: boolean
   /** Extra class for the root element. */
   className?: string
   /** Accessible label of the editor. */
   ariaLabel?: string
-  /** Translations of UI texts (touch toolbar, search panel…), e.g. `{ Copy: 'Copiar' }`. */
-  phrases?: Record<string, string>
+  /**
+   * Translations of UI texts (touch toolbar, search panel…), e.g. `{ Copy: 'Copiar' }`.
+   * The keys are listed in `PHRASES`; ready-made packs live in `jonacode/locales/*`.
+   */
+  phrases?: Phrases
   /** Called after every document change with the new value. */
   onChange?: (value: string, event: ChangeEvent) => void
 }
@@ -209,8 +215,6 @@ export interface Rect {
 
 // ---------------------------------------------------------------------------
 
-const PAD_X = 12
-const PAD_Y = 8
 /**
  * Browsers cap element heights (Firefox at ~17.9M px, others at ~33.5M px).
  * Taller documents are drawn in "compressed" mode: the scrollable height is
@@ -235,6 +239,12 @@ interface CellView { el: HTMLDivElement; text: string; cls: string; top: number 
 interface GutterView { spec: GutterSpec; el: HTMLDivElement; cells: Map<number, CellView>; width: string }
 interface LayerView { spec: LayerSpec; el: HTMLDivElement }
 interface KeymapEntry { map: CompiledKeymap; prec: number }
+type ExtensionFn = (editor: Editor) => void | (() => void)
+/** The place of an installed extension in the list: what it registers (gutters, keymaps, handlers) is ordered by it. */
+interface Scope { rank: number }
+interface Installed { ext: ExtensionFn; scope: Scope; off: () => void }
+/** Registrations made outside an extension go last. */
+const END: Scope = { rank: 1e9 }
 
 type AnyListener = (...args: unknown[]) => void
 
@@ -292,9 +302,8 @@ function measureX(lineEl: HTMLElement, col: number, side: -1 | 1 = 1): number {
   return (rect.left - line.left) / scaleOf(lineEl, line)
 }
 
-/** Horizontal scale applied by CSS transforms (1 when untransformed). */
 /**
- * CSS scale of an element (a transformed ancestor). `offsetWidth` is rounded
+ * CSS scale of an element (a transformed ancestor; 1 when untransformed). `offsetWidth` is rounded
  * while the rect isn't: differences under a pixel are rounding, not scale
  * (a fake 1.0008 used to push clicks deep in long documents off by lines).
  */
@@ -337,9 +346,14 @@ export class Editor {
   private history = new History()
   private undoProvider: UndoProvider | null = null
   private onChangeOption: EditorOptions['onChange']
-  private phrases: Record<string, string>
+  /** The indentation the app asked for: it wins over the language's defaults. */
+  private asked: Pick<EditorOptions, 'tabSize' | 'insertSpaces'>
+  private phrases: Readonly<Record<string, string | undefined>>
 
   private lh = 20
+  /** Space around the text (px): every geometry computation reads these (see the `padding` option). */
+  private padX = 12
+  private padY = 8
   /** Advance of `x`, and of a digit (px). */
   private cw = 0
   private dw = 0
@@ -366,8 +380,11 @@ export class Editor {
   private mouseHandlers: MouseHandler[] = []
   private changeFilters: ChangeFilter[] = []
   private listeners = new Map<string, Set<AnyListener>>()
-  private extDisposers: (() => void)[] = []
+  private installed: Installed[] = []
+  /** Disposers of the extension being installed (null outside an install), and its place. */
   private collecting: (() => void)[] | null = null
+  private scope = END
+  private scopes = new WeakMap<object, Scope>()
   private disposers: (() => void)[] = []
   private resizeObserver: ResizeObserver | null = null
 
@@ -441,9 +458,10 @@ export class Editor {
     this.doc = new TextDocument(options.value ?? '')
     this._language = options.language ?? plainText
     this._theme = options.theme ?? oneDark
+    this.asked = { tabSize: options.tabSize, insertSpaces: options.insertSpaces }
     this.options = {
-      tabSize: options.tabSize ?? 2,
-      insertSpaces: options.insertSpaces ?? true,
+      tabSize: 0,
+      insertSpaces: true,
       readOnly: options.readOnly ?? false,
       lineWrapping: options.lineWrapping ?? false,
       placeholder: options.placeholder ?? '',
@@ -482,9 +500,9 @@ export class Editor {
     this.inputDOM.setAttribute('aria-label', options.ariaLabel ?? 'Code editor')
 
     const style = this.dom.style
-    style.setProperty('--jc-pad-x', PAD_X + 'px')
+    this.applyPadding(options.padding)
     style.setProperty('--jc-lh', this.lh + 'px')
-    style.setProperty('--jc-tab-size', String(this.options.tabSize))
+    this.applyIndent()
     this.applyFont(options)
     this.dom.classList.add(this._theme.className)
     if (options.className) this.dom.classList.add(...options.className.split(/\s+/).filter(Boolean))
@@ -498,7 +516,7 @@ export class Editor {
     this.keymaps.push({ map: compileKeymap(defaultKeymap), prec: -1 })
     this.addLayer({ className: 'jc-selection-layer', order: 0, render: (dom) => this.drawSelection(dom) })
     this.bindEvents()
-    this.installExtensions(options.extensions)
+    this.setExtensions(options.extensions)
     this.maxCols = this.computeMaxCols()
     this.measure()
     this.render()
@@ -540,6 +558,11 @@ export class Editor {
     return this.lh
   }
 
+  /** Space around the text, in px (the `padding` option). */
+  get padding(): { readonly x: number; readonly y: number } {
+    return { x: this.padX, y: this.padY }
+  }
+
   /** Advance of `x` (px): the width of a column in monospace fonts. */
   get charWidth(): number {
     return this.cw || 8
@@ -574,9 +597,13 @@ export class Editor {
     return this.options.insertSpaces ? ' '.repeat(this.options.tabSize) : '\t'
   }
 
-  /** Translated UI text (see the `phrases` option). */
-  phrase(text: string): string {
-    return this.phrases[text] ?? text
+  /**
+   * Translated UI text (see the `phrases` option). `fallback` is the English
+   * text of a phrase whose key isn't the text itself; a translation keyed by
+   * that text is honored too.
+   */
+  phrase(key: PhraseKey, fallback: string = key): string {
+    return this.phrases[key] ?? this.phrases[fallback] ?? fallback
   }
 
   /** Lines that contain a cursor. */
@@ -876,9 +903,9 @@ export class Editor {
       this.dom.classList.add(opts.theme.className)
       this.gutterDirty = true
     }
-    if (opts.tabSize != null && opts.tabSize !== this.options.tabSize) {
-      this.options.tabSize = opts.tabSize
-      this.dom.style.setProperty('--jc-tab-size', String(opts.tabSize))
+    if (opts.tabSize != null) this.asked.tabSize = opts.tabSize
+    if (opts.insertSpaces != null) this.asked.insertSpaces = opts.insertSpaces
+    if (this.applyIndent()) {
       this.maxCols = this.computeMaxCols()
       this.resetWrap()
     }
@@ -890,7 +917,6 @@ export class Editor {
       this.lastWidth = -1
       this.invalidateLines()
     }
-    if (opts.insertSpaces != null) this.options.insertSpaces = opts.insertSpaces
     if (opts.readOnly != null) this.setReadOnlyState(opts.readOnly)
     if (opts.placeholder != null) this.options.placeholder = opts.placeholder
     if (opts.minLines != null) this.options.minLines = opts.minLines
@@ -901,6 +927,14 @@ export class Editor {
     if (opts.fontSize != null || opts.fontFamily != null || opts.lineHeight != null) {
       this.applyFont(opts)
       this.measure()
+    }
+    if (opts.padding) {
+      this.applyPadding(opts.padding)
+      // Widths, heights and (when wrapping) the columns per row all depend on it.
+      this.lastHeight = this.lastWidth = -1
+      this.lastLimits = ''
+      this.placeholderEl?.remove()
+      this.placeholderEl = null
     }
     if ('extensions' in opts) this.setExtensions(opts.extensions)
     if (opts.value != null && opts.value !== this.getValue()) this.setValue(opts.value)
@@ -913,6 +947,23 @@ export class Editor {
     this.dom.classList.toggle('jc-readonly', readOnly)
   }
 
+  /** Indentation in effect: what the app asked for, else the language's defaults. True when the tab size changed. */
+  private applyIndent(): boolean {
+    const { useTabs, size } = this._language.indent
+    this.options.insertSpaces = this.asked.insertSpaces ?? !useTabs
+    const tabSize = this.asked.tabSize ?? size ?? 2
+    if (tabSize === this.options.tabSize) return false
+    this.options.tabSize = tabSize
+    this.dom.style.setProperty('--jc-tab-size', String(tabSize))
+    return true
+  }
+
+  private applyPadding(padding: EditorOptions['padding']): void {
+    this.padX = Math.max(0, padding?.x ?? this.padX)
+    this.padY = Math.max(0, padding?.y ?? this.padY)
+    this.dom.style.setProperty('--jc-pad-x', this.padX + 'px')
+  }
+
   private applyFont(opts: Partial<EditorOptions>): void {
     const s = this.dom.style
     if (opts.fontSize != null) s.setProperty('--jc-font-size', typeof opts.fontSize === 'number' ? opts.fontSize + 'px' : opts.fontSize)
@@ -923,30 +974,76 @@ export class Editor {
   // -------------------------------------------------------------------------
   // Extension API
 
-  /** Replaces all extensions (their registrations are disposed first). */
+  /**
+   * Replaces the extensions. The ones that are in the new list too (the same
+   * function, in the same relative order) stay installed, with their state;
+   * the others are disposed, and the new ones installed in their place in the
+   * order. To swap one part many times, see `compartment()`.
+   */
   setExtensions(extensions: Extension): void {
-    for (const dispose of this.extDisposers.splice(0).reverse()) dispose()
-    this.installExtensions(extensions)
+    const next: ExtensionFn[] = []
+    const flat = (ext: Extension) => {
+      if (Array.isArray(ext)) (ext as readonly Extension[]).forEach(flat)
+      else if (ext) next.push(ext as ExtensionFn)
+    }
+    flat(extensions)
+    const old = this.installed
+    let from = 0
+    const kept = next.map((ext) => {
+      const i = old.findIndex((e, k) => k >= from && e.ext === ext)
+      if (i >= 0) from = i + 1
+      return old[i]
+    })
+    for (const e of old.slice().reverse()) if (!kept.includes(e)) e.off()
+    // Kept ones are renumbered first: what the new ones register sorts into place among theirs.
+    kept.forEach((e, i) => e && (e.scope.rank = i))
+    this.installed = next.map((ext, i) => {
+      if (kept[i]) return kept[i]!
+      const scope = { rank: i }
+      return { ext, scope, off: this.install(ext, scope) }
+    })
     this.requestRender()
   }
 
-  private installExtensions(extensions: Extension): void {
-    const collected: (() => void)[] = []
-    this.collecting = collected
+  /** Runs extensions at a place in the order; returns what removes everything they registered. */
+  private install(extensions: Extension, scope: Scope): () => void {
+    const off: (() => void)[] = []
+    const outer = [this.collecting, this.scope] as const
+    this.collecting = off
+    this.scope = scope
     const visit = (ext: Extension) => {
       if (!ext) return
-      if (Array.isArray(ext)) (ext as readonly Extension[]).forEach(visit)
-      else {
-        const cleanup = (ext as (e: Editor) => void | (() => void))(this)
-        if (typeof cleanup === 'function') collected.push(once(cleanup))
-      }
+      if (Array.isArray(ext)) return (ext as readonly Extension[]).forEach(visit)
+      const cleanup = (ext as ExtensionFn)(this)
+      if (typeof cleanup === 'function') off.push(once(cleanup))
     }
     try {
       visit(extensions)
     } finally {
-      this.collecting = null
+      [this.collecting, this.scope] = outer
     }
-    this.extDisposers = collected
+    return () => {
+      for (const dispose of off.splice(0).reverse()) dispose()
+    }
+  }
+
+  /**
+   * Reserves the place of the extension being installed (the end of the list,
+   * when called outside one). The function it returns installs extensions
+   * there, replacing the ones it installed before, at any time: the rest of
+   * the editor's extensions aren't touched. `compartment()` is built on it.
+   */
+  slot(): (extensions: Extension) => void {
+    const scope = this.scope
+    let off = () => {}
+    const clear = () => off()
+    if (this.collecting) this.track(clear)
+    else this.disposers.push(clear)
+    return (extensions) => {
+      off()
+      off = this.destroyed ? off : this.install(extensions, scope)
+      this.requestRender()
+    }
   }
 
   /**
@@ -971,8 +1068,15 @@ export class Editor {
     return d
   }
 
-  private register<T>(list: T[], item: T, after?: () => void): () => void {
+  /** Keeps a list in the order of the extensions that registered its items. */
+  private place<T extends object>(list: T[], item: T): void {
+    this.scopes.set(item, this.scope)
     list.push(item)
+    list.sort((a, b) => (this.scopes.get(a) ?? END).rank - (this.scopes.get(b) ?? END).rank)
+  }
+
+  private register<T extends object>(list: T[], item: T, after?: () => void): () => void {
+    this.place(list, item)
     after?.()
     return this.track(() => {
       const i = list.indexOf(item)
@@ -1027,8 +1131,8 @@ export class Editor {
     const el = this.dom.ownerDocument.createElement('div')
     el.className = 'jc-gutter' + (spec.className ? ' ' + spec.className : '')
     const view: GutterView = { spec, el, cells: new Map(), width: '' }
-    this.gutters.push(view)
-    this.gutterBox.appendChild(el)
+    this.place(this.gutters, view)
+    this.gutterBox.insertBefore(el, this.gutters[this.gutters.indexOf(view) + 1]?.el ?? null)
     this.gutterBox.style.display = ''
     this.gutterDirty = true
     this.requestRender()
@@ -1099,11 +1203,11 @@ export class Editor {
   /** Top of a line's text (below its gap), relative to `contentDOM`. */
   private lineTop(line: number): number {
     const y = this.tall ? this.heights.before(line) + (this.gaps.get(line)?.above ?? 0) : this.lh * line
-    return PAD_Y + y + this.offset
+    return this.padY + y + this.offset
   }
 
   private lineAtY(y: number): number {
-    const at = y - this.offset - PAD_Y
+    const at = y - this.offset - this.padY
     const line = this.tall ? this.heights.lineAtRow(at) : Math.floor(at / this.lh)
     return Math.max(0, Math.min(this.doc.lineCount - 1, line))
   }
@@ -1362,7 +1466,7 @@ export class Editor {
   destroy(): void {
     if (this.destroyed) return
     this.emit('destroy', this)
-    for (const dispose of this.extDisposers.splice(0).reverse()) dispose()
+    for (const e of this.installed.splice(0).reverse()) e.off()
     for (const dispose of this.disposers.splice(0)) dispose()
     this.dragCleanup?.()
     this.resizeObserver?.disconnect()
@@ -1652,7 +1756,7 @@ export class Editor {
       return
     }
     const text = raw.replaceAll(SENTINEL, '')
-    if (raw === (this.touchInput ? SENTINEL : '')) return
+    if (raw === SENTINEL) return
     this.resetInput()
     if (!text) return
     this.userInput(() => this.handleTextInput(text))
@@ -2199,7 +2303,7 @@ export class Editor {
 
   /** Columns available per row when wrapping. */
   private computeWrapCols(): number {
-    const width = this.scrollDOM.clientWidth - this.gutterW - PAD_X * 2 - this.charWidth
+    const width = this.scrollDOM.clientWidth - this.gutterW - this.padX * 2 - this.charWidth
     return width > 0 ? Math.max(8, Math.floor(width / this.charWidth)) : 0
   }
 
@@ -2242,7 +2346,7 @@ export class Editor {
       if (this.tall) this.rebuildHeights()
       this.lastHeight = -1
     }
-    this.realHeight = PAD_Y * 2 + (this.tall ? this.heights.total : lh * count)
+    this.realHeight = this.padY * 2 + (this.tall ? this.heights.total : lh * count)
     const big = this.realHeight > MAX_HEIGHT
     if (big !== this.big) {
       this.big = big
@@ -2257,7 +2361,7 @@ export class Editor {
       this.sizer.style.height = height + 'px'
       this.lastHeight = height
     }
-    const width = wrapping ? 0 : Math.ceil((this.maxCols + 2) * this.charWidth) + PAD_X * 2
+    const width = wrapping ? 0 : Math.ceil((this.maxCols + 2) * this.charWidth) + this.padX * 2
     if (width !== this.lastWidth) {
       this.content.style.minWidth = width ? width + 'px' : ''
       this.lastWidth = width
@@ -2344,7 +2448,7 @@ export class Editor {
     const sc = this.scrollDOM
     // Room for a horizontal scrollbar, so the last line isn't hidden under it.
     const bar = maxLines ? sc.offsetHeight - sc.clientHeight : 0
-    const limits = (minLines ? PAD_Y * 2 + this.lh * minLines + 'px' : '') + '/' + (maxLines ? PAD_Y * 2 + this.lh * maxLines + bar + 'px' : '')
+    const limits = (minLines ? this.padY * 2 + this.lh * minLines + 'px' : '') + '/' + (maxLines ? this.padY * 2 + this.lh * maxLines + bar + 'px' : '')
     if (limits === this.lastLimits) return
     this.lastLimits = limits
     const [min, max] = limits.split('/')
@@ -2408,20 +2512,20 @@ export class Editor {
       const bottom = coords.bottom - this.offset
       let y = this.bigTop
       if (target.center) y = top - (viewHeight - lh) / 2
-      else if (top < y) y = top - (pos.line ? 0 : PAD_Y)
-      else if (bottom > y + viewHeight) y = bottom - viewHeight + (pos.line === this.doc.lineCount - 1 ? PAD_Y : 0)
+      else if (top < y) y = top - (pos.line ? 0 : this.padY)
+      else if (bottom > y + viewHeight) y = bottom - viewHeight + (pos.line === this.doc.lineCount - 1 ? this.padY : 0)
       this.scrollToReal(y)
     } else if (viewHeight > 0 && viewHeight < this.lastHeight) {
       // The first row of the document: all the way up (a zone above line 1 shows too).
       const upper = pos.line === 0 && coords.top === this.lineTop(0) ? 0 : coords.top
-      const lower = coords.bottom + (pos.line === this.doc.lineCount - 1 ? PAD_Y : 0)
+      const lower = coords.bottom + (pos.line === this.doc.lineCount - 1 ? this.padY : 0)
       if (target.center) sc.scrollTop = coords.top - (viewHeight - lh) / 2
       else if (upper < sc.scrollTop) sc.scrollTop = upper
       else if (lower > sc.scrollTop + viewHeight) sc.scrollTop = lower - viewHeight
     }
     const viewWidth = sc.clientWidth - this.gutterW
     if (viewWidth > 0 && !this.wrapping) {
-      const x = PAD_X + coords.x
+      const x = this.padX + coords.x
       const margin = this.charWidth * 2
       if (x - margin < sc.scrollLeft) sc.scrollLeft = Math.max(0, x - margin * 2)
       else if (x + margin > sc.scrollLeft + viewWidth) sc.scrollLeft = x + margin - viewWidth
@@ -2450,7 +2554,6 @@ export class Editor {
       this.hlTask = () => clearTimeout(id)
     }
   }
-
 
   /** Line HTML, from a small LRU cache (scrolling back and forth re-uses it). */
   private lineHTML(text: string, state: State, breaks: readonly number[] | null): string {
@@ -2622,7 +2725,7 @@ export class Editor {
     if (show && !this.placeholderEl) {
       this.placeholderEl = this.dom.ownerDocument.createElement('div')
       this.placeholderEl.className = 'jc-placeholder'
-      this.placeholderEl.style.top = PAD_Y + 'px'
+      this.placeholderEl.style.top = this.padY + 'px'
       this.layersBelow.appendChild(this.placeholderEl)
     }
     if (this.placeholderEl) {

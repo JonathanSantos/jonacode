@@ -224,7 +224,7 @@ if (texto != null && true) { return 1.5 }`,
   let lang = plainText
 
   // ------------------------------------------------------------------ editors
-  const PHRASES = { Find: 'Buscar', Replace: 'Substituir', 'Go to line': 'Ir para a linha', Line: 'Linha' }
+  const PHRASES = J.ptBR
   const grammarEd = createEditor($('#grammar'), { value: saved?.grammar ?? PRESETS[format][preset].grammar, language: javascript, phrases: PHRASES, extensions: basicSetup() })
   const sampleEd = createEditor($('#sample'), { value: saved?.sample ?? PRESETS[format][preset].sample, phrases: PHRASES, extensions: [basicSetup(), tokenInspector()] })
   const testsEd = createEditor($('#tests'), { value: saved?.tests ?? '', phrases: PHRASES, extensions: basicSetup({ closeBrackets: false }), placeholder: 'Clique em “Gerar do exemplo”, ou escreva:\nlet x = 1\n^^^ keyword' })

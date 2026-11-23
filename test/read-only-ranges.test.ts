@@ -4,7 +4,7 @@ import { applyEdits } from '../src/ai/edits.ts'
 import { editorTools } from '../src/ai/tools.ts'
 import { getDecorations } from '../src/decorations.ts'
 import type { Editor, Extension } from '../src/editor.ts'
-import { getReadOnlyRanges, lineRange, readOnlyRanges, setReadOnlyRanges } from '../src/extensions/read-only-ranges.ts'
+import { blocksChange, getReadOnlyRanges, lineRange, readOnlyRanges, setReadOnlyRanges } from '../src/extensions/read-only-ranges.ts'
 import { fakeEditor, type FakeEditor } from './fake-editor.ts'
 
 const p = (line: number, col: number) => ({ line, col })
@@ -134,4 +134,108 @@ test('read-only ranges: AI edits touching them fail, with a message for the mode
   assert.equal(ed.getValue(), 'one\nPROTECTED\n3')
   assert.equal((await tools.run('insert_lines', { line: 1, text: 'between' })).isError, undefined)
   assert.equal(ed.getValue(), 'one\nbetween\nPROTECTED\n3')
+})
+
+// ---------------------------------------------------------------------------
+// Inclusive edges
+
+/** `head / YOURS / tail`: only line 2 can be edited, the ends of the document included. */
+function exercise(): { ed: FakeEditor; rejected: string[] } {
+  const ed = fakeEditor('head\nYOURS\ntail')
+  const rejected: string[] = []
+  use(readOnlyRanges([], { onReject: (_, origin) => rejected.push(origin) }), ed)
+  setReadOnlyRanges(ed, [lineRange(ed, 1, 1, { sticky: true }), lineRange(ed, 3, 3, { sticky: true })])
+  return { ed, rejected }
+}
+
+test('read-only ranges: blocksChange at the edges follows the inclusive flags', () => {
+  const insertAt = (line: number, col: number) => ({ from: p(line, col), to: p(line, col), inserted: ['x'], removed: [''] })
+  const range = { from: p(1, 2), to: p(1, 6) }
+  assert.equal(blocksChange(range, insertAt(1, 2)), false)
+  assert.equal(blocksChange(range, insertAt(1, 6)), false)
+  assert.equal(blocksChange(range, insertAt(1, 4)), true)
+  assert.equal(blocksChange({ ...range, inclusiveStart: true }, insertAt(1, 2)), true)
+  assert.equal(blocksChange({ ...range, inclusiveStart: true }, insertAt(1, 6)), false)
+  assert.equal(blocksChange({ ...range, inclusiveEnd: true }, insertAt(1, 6)), true)
+  assert.equal(blocksChange({ ...range, inclusiveEnd: true }, insertAt(1, 2)), false)
+  // Never past the edges, whatever the flags.
+  const both = { ...range, inclusiveStart: true, inclusiveEnd: true }
+  assert.equal(blocksChange(both, insertAt(1, 1)), false)
+  assert.equal(blocksChange(both, insertAt(1, 7)), false)
+  // Deleting what is next to an inclusive edge is still fine.
+  assert.equal(blocksChange(both, { from: p(1, 0), to: p(1, 2), inserted: [''], removed: ['ab'] }), false)
+  assert.equal(blocksChange(both, { from: p(1, 6), to: p(1, 8), inserted: [''], removed: ['ab'] }), false)
+})
+
+test('read-only ranges: lineRange sticky makes the edges at the ends of the document inclusive', () => {
+  const ed = fakeEditor('a\nbb\nccc')
+  assert.deepEqual(lineRange(ed, 1, 2, { sticky: true }), { from: p(0, 0), to: p(1, 2), inclusiveStart: true })
+  assert.deepEqual(lineRange(ed, 2, 3, { sticky: true }), { from: p(1, 0), to: p(2, 3), inclusiveEnd: true })
+  assert.deepEqual(lineRange(ed, 1, Infinity, { sticky: true }), { from: p(0, 0), to: p(2, 3), inclusiveStart: true, inclusiveEnd: true })
+  assert.deepEqual(lineRange(ed, 2, 2, { sticky: true }), { from: p(1, 0), to: p(1, 2) })
+  assert.deepEqual(lineRange(ed, 1, 3), { from: p(0, 0), to: p(2, 3) })
+})
+
+test('read-only ranges: nothing is typed before a sticky first line or after a sticky last line', () => {
+  const { ed, rejected } = exercise()
+  ed.dispatch({ changes: { from: p(0, 0), insert: 'x' }, origin: 'input' })
+  ed.dispatch({ changes: { from: p(0, 0), insert: 'new\n' }, origin: 'input.paste' })
+  ed.dispatch({ changes: { from: p(2, 4), insert: 'x' }, origin: 'input' })
+  ed.dispatch({ changes: { from: p(2, 4), insert: '\nnew' }, origin: 'input' })
+  assert.equal(ed.getValue(), 'head\nYOURS\ntail')
+  assert.deepEqual(rejected, ['input', 'input.paste', 'input', 'input'])
+  // The edges that face the editable line stay open: text typed there is outside the ranges.
+  ed.dispatch({ changes: { from: p(1, 0), insert: '> ' }, origin: 'input' })
+  ed.dispatch({ changes: { from: p(1, 7), insert: '!' }, origin: 'input' })
+  assert.equal(ed.getValue(), 'head\n> YOURS!\ntail')
+  assert.equal(rejected.length, 4)
+})
+
+test('read-only ranges: the inclusive flags survive edits and a get → set round trip', () => {
+  const { ed, rejected } = exercise()
+  // An unrelated edit that moves the last range to another line (so it is rebuilt).
+  ed.dispatch({ changes: { from: p(1, 5), insert: '\nmore\nlines' }, origin: 'input' })
+  assert.deepEqual(getReadOnlyRanges(ed), [
+    { from: p(0, 0), to: p(0, 4), inclusiveStart: true },
+    { from: p(4, 0), to: p(4, 4), inclusiveEnd: true },
+  ])
+  ed.dispatch({ changes: { from: p(4, 4), insert: 'x' }, origin: 'input' })
+  ed.dispatch({ changes: { from: p(0, 0), insert: 'x' }, origin: 'input' })
+  assert.deepEqual(rejected, ['input', 'input'])
+  // What an app does to keep the locks across something that resets them.
+  setReadOnlyRanges(ed, getReadOnlyRanges(ed))
+  ed.dispatch({ changes: { from: p(4, 4), insert: 'x' }, origin: 'input' })
+  ed.dispatch({ changes: { from: p(0, 0), insert: 'x' }, origin: 'input' })
+  assert.equal(ed.getValue(), 'head\nYOURS\nmore\nlines\ntail')
+  assert.equal(rejected.length, 4)
+  // Given backwards, the flags swap with the edges.
+  setReadOnlyRanges(ed, [{ from: p(0, 4), to: p(0, 0), inclusiveEnd: true }])
+  assert.deepEqual(getReadOnlyRanges(ed), [{ from: p(0, 0), to: p(0, 4), inclusiveStart: true }])
+})
+
+test('read-only ranges: at an inclusive edge, undo and remote edits insert and stay outside (a range never grows)', () => {
+  const ed = fakeEditor('abcLOCKED')
+  setReadOnlyRanges(ed, [{ from: p(0, 3), to: p(0, 9), inclusiveStart: true, inclusiveEnd: true }])
+  ed.dispatch({ changes: { from: p(0, 0), to: p(0, 3) }, origin: 'delete' })
+  assert.equal(ed.getValue(), 'LOCKED')
+  assert.equal(ed.undo(), true)
+  assert.equal(ed.getValue(), 'abcLOCKED')
+  assert.deepEqual(getReadOnlyRanges(ed), [{ from: p(0, 3), to: p(0, 9), inclusiveStart: true, inclusiveEnd: true }])
+  ed.dispatch({ changes: { from: p(0, 9), insert: '!' }, origin: 'remote' })
+  assert.deepEqual(getReadOnlyRanges(ed), [{ from: p(0, 3), to: p(0, 9), inclusiveStart: true, inclusiveEnd: true }])
+  // The remote text is outside, so it can be edited.
+  ed.dispatch({ changes: { from: p(0, 9), to: p(0, 10) }, origin: 'delete' })
+  assert.equal(ed.getValue(), 'abcLOCKED')
+})
+
+test('read-only ranges: setReadOnlyRanges called from another extension outlives that extension', () => {
+  const ed = fakeEditor('one\ntwo')
+  // The fake has no extension scopes: what matters is that the protection is installed untracked.
+  let untracked = 0
+  const original = ed.untracked
+  ;(ed as { untracked: Editor['untracked'] }).untracked = (fn) => (untracked++, original(fn))
+  setReadOnlyRanges(ed, [lineRange(ed, 1, 1)])
+  assert.equal(untracked, 1)
+  ed.dispatch({ changes: { from: p(0, 1), insert: 'x' } })
+  assert.equal(ed.getValue(), 'one\ntwo')
 })

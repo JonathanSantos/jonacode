@@ -7,6 +7,7 @@
  */
 import type { Editor, Extension } from '../editor.ts'
 import type { Command, KeyBinding } from '../keymap.ts'
+import type { PhraseKey } from '../phrases.ts'
 import { selFrom, selTo, type Selection } from '../state/selection.ts'
 import { cmpPos, eqPos, splitLines, type ChangeSpec, type Pos } from '../state/text.ts'
 import { injectStyle } from '../view/style.ts'
@@ -313,7 +314,7 @@ class SearchPanel {
     this.editor = editor
     this.maxCount = options.maxCount ?? 1_000_000
     this.query = { search: '', replace: '', caseSensitive: !!options.caseSensitive, wholeWord: !!options.wholeWord, regexp: !!options.regexp }
-    const t = (s: string) => editor.phrase(s)
+    const t = (s: PhraseKey) => editor.phrase(s)
     const doc = editor.dom.ownerDocument
     this.dom = doc.createElement('div')
     this.dom.className = 'jc-search'

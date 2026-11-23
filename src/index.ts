@@ -11,6 +11,9 @@ export type {
   LayerSpec, LineGap, MouseHandler, UndoProvider, RangeChange, Rect, ResolvedOptions, TokenTransform, Transaction,
 } from './editor.ts'
 
+export { compartment, type Compartment } from './compartment.ts'
+export { PHRASES, type PhraseKey, type Phrases } from './phrases.ts'
+
 // Languages API
 export { defineLanguage, extendLanguage, findLanguage, innerLanguage, plainText, words, State } from './language/language.ts'
 export type {
@@ -26,7 +29,9 @@ export type { Theme, ThemeColors, ThemeSpec, TokenStyle } from './theme/theme.ts
 export { oneDark } from './themes/one-dark.ts'
 
 // Static highlighting & lazy editors
-export { highlight, highlightAll, highlightStyles, STATIC_CSS, type HighlightOptions, type HighlightAllOptions } from './highlight.ts'
+export {
+  highlight, highlightAll, highlightStyles, ensureHighlightStyles, STATIC_CSS, type HighlightOptions, type HighlightAllOptions,
+} from './highlight.ts'
 export { lazyEditor, type LazyEditor, type LazyEditorOptions } from './lazy.ts'
 
 // Decorations (marks, line classes, widgets)
@@ -36,9 +41,12 @@ export {
   type Zone, type ZoneSpec, type ZoneAction, type Widget, type WidgetSpec, type WidgetContent, type Overlay, type OverlaySpec, type OverlayPosition,
 } from './widgets.ts'
 export { createFloating, type Floating } from './view/floating.ts'
+export {
+  lineWidgets, refreshLineWidgets, widgetPatch, type LineWidget, type LineWidgetSource, type LineWidgetsOptions,
+} from './extensions/line-widgets.ts'
 
 // Extensions
-export { lineNumbers, type LineNumbersOptions } from './extensions/line-numbers.ts'
+export { lineNumbers, lineNumberClass, type LineNumbersOptions, type LineNumberClassFn } from './extensions/line-numbers.ts'
 export { highlightActiveLine } from './extensions/active-line.ts'
 export { bracketMatching } from './extensions/bracket-matching.ts'
 export { closeBrackets } from './extensions/close-brackets.ts'
@@ -71,7 +79,7 @@ export {
   folding, foldCode, unfoldCode, toggleFold, foldAll, unfoldAll, foldKeymap, foldableRange, type FoldingOptions,
 } from './extensions/folding.ts'
 export {
-  readOnlyRanges, setReadOnlyRanges, getReadOnlyRanges, lineRange, type ProtectedRange, type ReadOnlyRangesOptions,
+  readOnlyRanges, setReadOnlyRanges, getReadOnlyRanges, lineRange, blocksChange, type ProtectedRange, type ReadOnlyRangesOptions,
 } from './extensions/read-only-ranges.ts'
 
 export {

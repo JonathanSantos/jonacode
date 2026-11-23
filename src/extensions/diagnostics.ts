@@ -17,6 +17,7 @@ import type { Editor, Extension } from '../editor.ts'
 import type { Command, KeyBinding } from '../keymap.ts'
 import { cmpPos, type Pos } from '../state/text.ts'
 import { injectStyle } from '../view/style.ts'
+import { lineNumberClass } from './line-numbers.ts'
 import { hoverTooltip, showTooltip } from './tooltip.ts'
 
 export type Severity = 'error' | 'warning' | 'info' | 'hint'
@@ -39,8 +40,13 @@ export interface Diagnostic {
 }
 
 export interface DiagnosticsOptions {
-  /** Markers in a gutter. Default true. */
-  gutter?: boolean
+  /**
+   * Markers per line. `true` (default): in a gutter of their own; `'line-numbers'`: drawn on the
+   * line number (needs `lineNumbers()`), taking no room; `false`: none.
+   */
+  gutter?: boolean | 'line-numbers'
+  /** Width of the markers' own gutter, in px. Default 14. */
+  gutterWidth?: number
   /** Messages in a tooltip on hover. Default true. */
   hover?: boolean
   /** The first message of each line, dimmed, after its end ("error lens"). Default false. */
@@ -207,51 +213,94 @@ export const previousDiagnostic: Command = (ed) => jump(ed, -1)
 
 export const diagnosticsKeymap: readonly KeyBinding[] = [{ key: 'F8', run: nextDiagnostic, shift: previousDiagnostic }]
 
-/** Editors where `diagnostics()` is installed (it's shared: linters and the syntax checker all include it). */
-const installed = new WeakMap<Editor, number>()
+/**
+ * `diagnostics()` is shared: linters and the syntax checker all include it. One UI per editor, for
+ * as long as someone uses it; an option someone sets wins over the defaults of the others.
+ */
+interface Shared {
+  users: DiagnosticsOptions[]
+  /** The options the UI was built with (to rebuild only when they change). */
+  key: string
+  off: (() => void) | null
+}
+const shared = new WeakMap<Editor, Shared>()
+const OPTIONS = ['gutter', 'gutterWidth', 'hover', 'inline'] as const
+
+/** Shows the diagnostics of a line in a tooltip (a click on its marker). */
+function showLine(editor: Editor, line: number): boolean {
+  const here = getDiagnostics(editor).filter((d) => d.from.line === line)
+  if (here.length) showTooltip(editor, here[0]!.from, describe(editor, here))
+  return here.length > 0
+}
+
+/** Builds the UI for some options; returns what removes it. */
+function mount(editor: Editor, o: DiagnosticsOptions): () => void {
+  injectStyle(editor.dom, 'diagnostics', diagnosticsCSS())
+  const run = (ext: unknown) => (ext as (editor: Editor) => (() => void) | void)(editor)
+  const offs: ((() => void) | void)[] = [editor.addKeymap(diagnosticsKeymap)]
+  if (o.gutter === 'line-numbers') {
+    offs.push(
+      run(lineNumberClass((line, ed) => {
+        const s = severityAt(ed, line)
+        return s && `jc-diag-ln jc-diag-${s}`
+      })),
+      editor.addMouseHandler((e, ed) => !!(e.target as Element).closest?.('.jc-diag-ln') && showLine(ed, ed.posAtClient(e.clientX, e.clientY).line)),
+    )
+  } else if (o.gutter !== false) {
+    offs.push(editor.addGutter({
+      className: 'jc-gutter-diag',
+      width: () => (o.gutterWidth ?? 14) + 'px',
+      cell: (line, ed) => {
+        const s = severityAt(ed, line)
+        return s ? { text: ICON[s], className: `jc-diag-marker jc-diag-${s}` } : null
+      },
+      onMouseDown: (line, _e, ed) => showLine(ed, line),
+    }))
+  }
+  if (o.hover !== false) {
+    offs.push(run(hoverTooltip((pos, ed) => {
+      const keys = keysOf(ed)
+      const here = decorationsAt(ed, pos).filter((d) => keys.has(d.set)).map((d) => d.data as Diagnostic)
+      return here.length ? describe(ed, here) : null
+    })))
+  }
+  return () => {
+    for (const off of offs) off?.()
+  }
+}
+
+/** (Re)builds the shared UI when the options in effect changed; removes everything with the last user. */
+function sync(editor: Editor, sh: Shared): void {
+  const o: DiagnosticsOptions = {}
+  for (const k of OPTIONS) (o as Record<string, unknown>)[k] = sh.users.find((u) => u[k] !== undefined)?.[k]
+  const key = sh.users.length ? JSON.stringify(o) : ''
+  if (key === sh.key) return
+  sh.key = key
+  sh.off?.()
+  // Shared: not tied to whichever extension happens to be installing now.
+  sh.off = key ? editor.untracked(() => mount(editor, o)) : null
+  if (o.inline) {
+    inlineOn.add(editor)
+    drawLens(editor)
+  } else {
+    inlineOn.delete(editor)
+    setDecorations(editor, LENS, [])
+  }
+  if (key) return
+  shared.delete(editor)
+  for (const k of keysOf(editor)) setDecorations(editor, k, [])
+}
 
 /** Gutter markers, hover messages and F8 navigation for the diagnostics set with `setDiagnostics`. */
 export function diagnostics(options: DiagnosticsOptions = {}): Extension {
   return (editor) => {
-    if (options.inline) inlineOn.add(editor)
-    const count = installed.get(editor) ?? 0
-    installed.set(editor, count + 1)
-    const release = () => installed.set(editor, (installed.get(editor) ?? 1) - 1)
-    // Already there (another linter brought it): share it.
-    if (count) return release
-    injectStyle(editor.dom, 'diagnostics', diagnosticsCSS())
-    const disposers: (() => void)[] = [release]
-    if (options.gutter !== false) {
-      disposers.push(editor.addGutter({
-        className: 'jc-gutter-diag',
-        width: () => '14px',
-        cell: (line, ed) => {
-          const s = severityAt(ed, line)
-          return s ? { text: ICON[s], className: `jc-diag-marker jc-diag-${s}` } : null
-        },
-        onMouseDown: (line, _e, ed) => {
-          const here = getDiagnostics(ed).filter((d) => d.from.line === line)
-          if (!here.length) return false
-          showTooltip(ed, here[0]!.from, describe(ed, here))
-          return true
-        },
-      }))
-    }
-    if (options.hover !== false) {
-      const hover = hoverTooltip((pos, ed) => {
-        const keys = keysOf(ed)
-        const here = decorationsAt(ed, pos).filter((d) => keys.has(d.set)).map((d) => d.data as Diagnostic)
-        return here.length ? describe(ed, here) : null
-      }) as (editor: Editor) => (() => void) | void
-      const off = hover(editor)
-      if (off) disposers.push(off)
-    }
-    disposers.push(editor.addKeymap(diagnosticsKeymap))
+    let sh = shared.get(editor)
+    if (!sh) shared.set(editor, (sh = { users: [], key: '', off: null }))
+    sh.users.push(options)
+    sync(editor, sh)
     return () => {
-      for (const d of disposers) d()
-      inlineOn.delete(editor)
-      for (const key of keysOf(editor)) setDecorations(editor, key, [])
-      setDecorations(editor, LENS, [])
+      sh.users.splice(sh.users.indexOf(options), 1)
+      sync(editor, sh)
     }
   }
 }
@@ -305,6 +354,11 @@ const diagnosticsCSS = () => `
 .jc-diag.jc-diag-info{background:var(--jc-info)}
 .jc-diag.jc-diag-hint{background:var(--jc-hint);opacity:.7}
 .jc-gutter-diag .jc-gutter-cell{text-align:center;padding:0;font-size:.7em;cursor:pointer}
+.jc-gutter-lines .jc-gutter-cell.jc-diag-ln{box-shadow:inset 2px 0;cursor:pointer}
+.jc-gutter-lines .jc-diag-ln.jc-diag-error{color:var(--jc-error)}
+.jc-gutter-lines .jc-diag-ln.jc-diag-warning{color:var(--jc-warning)}
+.jc-gutter-lines .jc-diag-ln.jc-diag-info{color:var(--jc-info)}
+.jc-gutter-lines .jc-diag-ln.jc-diag-hint{color:var(--jc-hint)}
 .jc-diag-marker.jc-diag-error,.jc-diag-item.jc-diag-error .jc-diag-icon,.jc-diag-lens.jc-diag-error{color:var(--jc-error)}
 .jc-diag-marker.jc-diag-warning,.jc-diag-item.jc-diag-warning .jc-diag-icon,.jc-diag-lens.jc-diag-warning{color:var(--jc-warning)}
 .jc-diag-marker.jc-diag-info,.jc-diag-item.jc-diag-info .jc-diag-icon,.jc-diag-lens.jc-diag-info{color:var(--jc-info)}

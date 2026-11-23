@@ -1,4 +1,4 @@
-# Typecheck, unit tests, build, size budget, then e2e in Chromium, Firefox and WebKit.
+# Typecheck, unit tests, build, the packed package in a fresh project, size budget, then e2e in Chromium, Firefox and WebKit.
 # The same sequence runs locally with `npm run ci` (after `npm run e2e:install` once).
 name: CI
 
@@ -30,6 +30,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run check:package
       - run: npm run size:check
 
       - name: Install Playwright browsers

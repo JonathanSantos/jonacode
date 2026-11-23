@@ -5,8 +5,8 @@ import { clickAt, expect, selection, settle, test, value } from './helpers.ts'
 const DOC = 'function double(a) {\n  const x = a\n  return x\n}\ndone()'
 
 /** An editor whose inline-edit source streams `chunks`, one per `window.gate.step()`; requests land on `window.req`. */
-async function setup(page: Page, chunks: string[]): Promise<void> {
-  await page.evaluate(([doc, chunks]) => {
+async function setup(page: Page, chunks: string[], extra: { phrases?: string; locks?: boolean } = {}): Promise<void> {
+  await page.evaluate(([doc, chunks, extra]) => {
     const w = window as any
     w.gate = makeGate()
     w.applied = []
@@ -18,8 +18,23 @@ async function setup(page: Page, chunks: string[]): Promise<void> {
         yield chunks[i]
       }
     }
-    mount({ value: doc, language: 'javascript', extensions: [J.basicSetup(), J.inlineEdit(source, { onApply: (_e: any, before: string) => w.applied.push(before) })] })
-  }, [DOC, chunks] as const)
+    w.after = []
+    // What the hooks see: `onApply` runs before the change, `onApplied` after it.
+    const seen = (list: any[]) => (e: any, before: string, range: any) => list.push({ before, range, value: e.getValue(), prompt: !!e.dom.querySelector('.jc-ie') })
+    w.calls = []
+    mount({
+      value: doc,
+      language: 'javascript',
+      phrases: extra.phrases === 'ptBR' ? J.ptBR : extra.phrases === 'legacy'
+        ? { 'The code changed while the AI was writing: nothing was replaced. Send again, or copy the result.': 'Traduzido pela frase antiga' }
+        : undefined,
+      extensions: [
+        J.basicSetup(),
+        J.inlineEdit(source, { onApply: (e: any, before: string, range: any) => (w.applied.push(before), seen(w.calls)(e, before, range)), onApplied: seen(w.after) }),
+        extra.locks && J.readOnlyRanges([{ from: { line: 2, col: 0 }, to: { line: 2, col: 10 } }]),
+      ],
+    })
+  }, [DOC, chunks, extra] as const)
 }
 
 /** Selects lines 2–3 with the keyboard. */
@@ -133,5 +148,72 @@ test.describe('inline edit', () => {
     // A second Escape closes it.
     await page.keyboard.press('Escape')
     await expect(prompt(page)).toHaveCount(0)
+  })
+
+  test('onApplied runs after the replacement, with the document before it and the range of the new code', async ({ page }) => {
+    await setup(page, ['  return a * 2\n'])
+    await selectBody(page)
+    await page.keyboard.press('ControlOrMeta+k')
+    await page.keyboard.type('double it')
+    await page.keyboard.press('Enter')
+    await page.evaluate(() => (window as any).gate.step())
+    await expect(prompt(page)).toHaveCount(0)
+    const after = 'function double(a) {\n  return a * 2\n}\ndone()'
+    const w = await page.evaluate(() => ({ calls: (window as any).calls, after: (window as any).after }))
+    // onApply: still the old document, the range about to be replaced.
+    expect(w.calls).toEqual([{ before: DOC, range: { from: { line: 1, col: 0 }, to: { line: 2, col: 10 } }, value: DOC, prompt: true }])
+    // onApplied: the new document is already there, the prompt is gone, the range covers the new code.
+    expect(w.after).toEqual([{ before: DOC, range: { from: { line: 1, col: 0 }, to: { line: 1, col: 14 } }, value: after, prompt: false }])
+    expect(await page.evaluate(() => ed.doc.slice({ line: 1, col: 0 }, { line: 1, col: 14 }))).toBe('  return a * 2')
+  })
+
+  test('an answer equal to the code replaces nothing and calls no hook', async ({ page }) => {
+    await setup(page, ['  const x = a\n  return x'])
+    await selectBody(page)
+    await page.keyboard.press('ControlOrMeta+k')
+    await page.keyboard.type('same')
+    await page.keyboard.press('Enter')
+    await page.evaluate(() => (window as any).gate.step())
+    await expect(prompt(page)).toHaveCount(0)
+    expect(await value(page)).toBe(DOC)
+    expect(await page.evaluate(() => [(window as any).calls.length, (window as any).after.length, ed.canUndo])).toEqual([0, 0, false])
+  })
+
+  test('a change refused by a read-only range keeps the answer to copy, and onApplied is not called', async ({ page }) => {
+    await setup(page, ['  return a * 2'], { locks: true, phrases: 'ptBR' })
+    await selectBody(page)
+    await page.keyboard.press('ControlOrMeta+k')
+    await page.keyboard.type('double it')
+    await page.keyboard.press('Enter')
+    await page.evaluate(() => (window as any).gate.step())
+    await expect(page.locator('.jc-ie-msg')).toHaveText('Este código não pode ser alterado aqui: nada foi trocado. Copie o resultado se precisar dele.')
+    await expect(page.locator('.jc-ie-preview')).toHaveText('  return a * 2')
+    await expect(page.locator('.jc-ie-copy')).toBeVisible()
+    expect(await value(page)).toBe(DOC)
+    expect(await page.evaluate(() => (window as any).after)).toEqual([])
+    // The whole pack is in Portuguese.
+    await expect(page.locator('.jc-ie-send')).toHaveText('Enviar')
+    await expect(page.locator('.jc-ie-copy')).toHaveText('Copiar')
+    await expect(input(page)).toHaveAttribute('aria-label', 'Editar com IA')
+  })
+
+  test('the conflict message: in English by default, and a translation keyed by the old English sentence still works', async ({ page }) => {
+    for (const [phrases, expected] of [
+      [undefined, 'The code changed while the AI was writing: nothing was replaced. Send again, or copy the result.'],
+      ['legacy', 'Traduzido pela frase antiga'],
+      ['ptBR', 'O código mudou enquanto a IA escrevia: nada foi trocado. Envie de novo, ou copie o resultado.'],
+    ] as const) {
+      await setup(page, ['  return a * 2'], { phrases })
+      await selectBody(page)
+      await page.keyboard.press('ControlOrMeta+k')
+      await page.keyboard.type('double it')
+      await page.keyboard.press('Enter')
+      await expect(prompt(page)).toHaveClass(/jc-ie-busy/)
+      // The code changes while the answer is on its way.
+      await page.evaluate(() => ed.dispatch({ changes: { from: { line: 1, col: 2 }, insert: 'let y\n  ' } }))
+      await page.evaluate(() => (window as any).gate.step())
+      await expect(page.locator('.jc-ie-msg')).toHaveText(expected)
+      expect(await page.evaluate(() => (window as any).after)).toEqual([])
+    }
   })
 })

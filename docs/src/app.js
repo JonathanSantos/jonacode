@@ -11,6 +11,7 @@
     editorTools, applyEdits, markAIEdits, setReadOnlyRanges, lineRange, inlineSuggestion, inlineEdit,
     diffView, setOriginal, getChunks, acceptAll, rejectAll, mergeView,
     treeSitter, cdnTreeSitter, cdnGrammars, fixAllSyntax, collab, yjs, addZone, addWidget, addOverlay, getZones,
+    lineWidgets, ptBR,
   } = J
   const SIZES = window.__SIZES__
   const $ = (sel, root = document) => root.querySelector(sel)
@@ -33,22 +34,8 @@
   const LANG_LABEL = { js: 'JavaScript', jsx: 'JSX', ts: 'TypeScript', tsx: 'TSX', json: 'JSON', html: 'HTML', css: 'CSS', md: 'Markdown', sql: 'SQL', shell: 'shell', log: 'log', text: 'texto' }
 
   // ------------------------------------------------------------------ helpers
-  const PHRASES = {
-    Find: 'Buscar', Replace: 'Substituir', 'Replace all': 'Substituir tudo', 'Match case': 'Diferenciar maiúsculas',
-    'Whole word': 'Palavra inteira', 'Regular expression': 'Expressão regular', 'Previous match': 'Anterior',
-    'Next match': 'Próximo', 'Select all matches': 'Selecionar todas', Close: 'Fechar', 'No results': 'Nenhum resultado',
-    Invalid: 'Inválida', 'Toggle replace': 'Mostrar substituir', Copy: 'Copiar', Cut: 'Recortar', Paste: 'Colar',
-    'Select all': 'Tudo',
-    Accept: 'Aceitar', Reject: 'Rejeitar', Revert: 'Reverter', 'Suggestion: {text}. Tab to accept.': 'Sugestão: {text}. Tab aceita.',
-    'Edit with AI… (Enter to send, Esc to cancel)': 'Editar com IA… (Enter envia, Esc cancela)', 'Edit with AI': 'Editar com IA',
-    'Generating…': 'Gerando…', 'Line {line}': 'Linha {line}', 'Lines {from}–{to}': 'Linhas {from}–{to}', Stop: 'Parar', Send: 'Enviar',
-    'The code changed while the AI was writing: nothing was replaced. Send again, or copy the result.': 'O código mudou enquanto a IA escrevia: nada foi trocado. Envie de novo ou copie o resultado.',
-    'The AI request failed': 'O pedido à IA falhou', 'Lines {from}–{to} of {total}': 'Linhas {from}–{to} de {total}',
-    'Missing {token}': 'Falta {token}', 'Unexpected {token}': '{token} inesperado', 'Unclosed {token}': '{token} sem fechar',
-    'Unterminated string': 'String sem fechar', 'Syntax error': 'Erro de sintaxe', 'Syntax error near {token}': 'Erro de sintaxe perto de {token}',
-    'Insert {token}': 'Inserir {token}', 'Remove {token}': 'Remover {token}', 'Close the string': 'Fechar a string', syntax: 'sintaxe',
-    Anonymous: 'Anônimo', 'People editing': 'Pessoas editando', 'Follow {name}': 'Seguir {name}', 'Stop following {name}': 'Parar de seguir {name}',
-  }
+  // The ready-made pack, with one text of our own (the touch bar is narrow).
+  const PHRASES = { ...ptBR, 'Select all': 'Tudo' }
   function frame(host, options) {
     return createEditor(host, { tabSize: 2, phrases: PHRASES, ...options })
   }
@@ -1924,7 +1911,8 @@ const url = 'https://exemplo.com/uma/url/muito/longa/sem/espacos/que/precisa/ser
     const ed = frame($('#zones-editor'), {
       value: `// As barras acima das funções são zonas: recalculadas a cada edição.\n// Renomeie uma função ou crie outra e veja as referências mudarem.\nexport function soma(a, b) {\n  return a + b\n}\n\nexport function media(lista) {\n  const total = lista.reduce((acc, n) => soma(acc, n), 0)\n  return total / lista.length\n}\n\nfunction relatorio(notas) {\n  const m = media(notas)\n  console.log(\`média: \${m.toFixed(1)} · soma: \${soma(m, 0)}\`)\n}\n\nrelatorio([7, 8.5, 10])\nrelatorio([5, 6])`,
       language: javascript,
-      extensions: basicSetup(),
+      // CodeLens: one action bar above each function, with its references. `lineWidgets` keeps the zones in sync.
+      extensions: [basicSetup(), lineWidgets((doc, editor) => lenses(doc, editor), { delay: 250 })],
     })
     const status = (text) => {
       $('#zone-status').textContent = text
@@ -1935,41 +1923,36 @@ const url = 'https://exemplo.com/uma/url/muito/longa/sem/espacos/que/precisa/ser
       const n = getZones(ed).length
       $('#zone-count').textContent = `${n} zona${n === 1 ? '' : 's'}`
     }
-    // CodeLens: one action bar above each function, with its references.
-    const lenses = new Map()
-    const refresh = () => {
-      const text = ed.getValue()
-      const seen = new Set()
-      for (let line = 0; line < ed.doc.lineCount; line++) {
-        const m = /^\s*(?:export\s+)?function\s+([\w$]+)/.exec(ed.doc.line(line))
-        if (!m) continue
-        const name = m[1]
-        seen.add(name)
+    function lenses(doc, editor) {
+      const text = doc.toString()
+      const out = []
+      doc.lines.forEach((source, line) => {
+        const name = /^\s*(?:export\s+)?function\s+([\w$]+)/.exec(source)?.[1]
+        if (!name) return
         const refs = (text.match(new RegExp(`\\b${name}\\s*\\(`, 'g'))?.length ?? 1) - 1
-        const actions = [
-          { label: '▶ Executar', run: () => status(`executando ${name}()…`) },
-          { label: refs ? `${refs} referência${refs > 1 ? 's' : ''}` : 'sem referências', title: 'Ir para a próxima referência', run: () => {
-            const re = new RegExp(`\\b${name}\\s*\\(`, 'g')
-            const lines = ed.doc.lines
-            const from = ed.selection.head
-            const hits = []
-            lines.forEach((t, l) => { for (const h of t.matchAll(re)) if (!/function\s+$/.test(t.slice(0, h.index))) hits.push({ line: l, col: h.index }) })
-            if (!hits.length) return status('nenhuma referência')
-            const next = hits.find((h) => h.line > from.line || (h.line === from.line && h.col > from.col)) ?? hits[0]
-            ed.setSelection(next, { line: next.line, col: next.col + name.length })
-            ed.focus()
-          } },
-        ]
-        const zone = lenses.get(name)
-        if (zone) zone.update({ line, actions })
-        else lenses.set(name, addZone(ed, { line, actions }))
-      }
-      for (const [name, zone] of lenses) if (!seen.has(name)) { zone.remove(); lenses.delete(name) }
-      count()
+        out.push({
+          key: name,
+          line,
+          actions: [
+            { label: '▶ Executar', run: () => status(`executando ${name}()…`) },
+            { label: refs ? `${refs} referência${refs > 1 ? 's' : ''}` : 'sem referências', title: 'Ir para a próxima referência', disabled: !refs, run: () => {
+              const re = new RegExp(`\\b${name}\\s*\\(`, 'g')
+              const from = editor.selection.head
+              const hits = []
+              editor.doc.lines.forEach((t, l) => { for (const h of t.matchAll(re)) if (!/function\s+$/.test(t.slice(0, h.index))) hits.push({ line: l, col: h.index }) })
+              if (!hits.length) return status('nenhuma referência')
+              const next = hits.find((h) => h.line > from.line || (h.line === from.line && h.col > from.col)) ?? hits[0]
+              editor.setSelection(next, { line: next.line, col: next.col + name.length })
+              editor.focus()
+            } },
+          ],
+        })
+      })
+      // The zones exist once this round is applied.
+      queueMicrotask(() => count())
+      return out
     }
-    let timer = 0
-    ed.on('change', () => { clearTimeout(timer); timer = setTimeout(refresh, 250) })
-    refresh()
+    count()
 
     const others = []
     $('#zone-comment').addEventListener('click', () => {
@@ -2061,6 +2044,8 @@ export const frete = calcularFrete(3, 120)
       ['lineClass(fn)', 'Uma classe por linha, calculada do texto (níveis de log, diffs…).', 'lineClass'],
       ['setDecorations(…)', 'Marcações: trechos, linhas e widgets em conjuntos com nome, que acompanham as edições.', 'decorations'],
       ['addZone · addWidget · addOverlay', 'Elementos seus entre as linhas (com espaço próprio), flutuando junto a uma posição ou fixos num canto.', 'zones'],
+      ['lineWidgets(fonte)', 'Zonas mantidas a partir de um provedor, comparadas por chave: o “code lens” (já com as zonas).', 'lineWidgets'],
+      ['compartment()', 'Uma parte das extensões que troca sozinha, sem desmontar as outras.', 'compartment'],
       ['hoverTooltip(fonte)', 'Tooltips ao passar o mouse, de várias fontes (síncronas ou assíncronas).', 'hoverTooltip'],
       ['diagnostics() · linter(fonte)', 'Sublinhado ondulado, margem, mensagens inline, correções rápidas e F8.', 'diagnostics'],
       ['autocomplete()', 'Sugestões da linguagem, do documento e de fontes suas (async), com busca aproximada.', 'autocomplete'],
@@ -2441,7 +2426,7 @@ function somar(lista) {
         basicSetup(),
         diffView({ original: CODE }),
         inlineEdit(({ instruction, text }, signal) => fakeStream(rewrite(instruction, text), signal, 5, 12), {
-          onApply: (e, before) => setOriginal(e, before),
+          onApplied: (e, before) => setOriginal(e, before),
         }),
       ],
     })
