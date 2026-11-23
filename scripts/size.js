@@ -51,7 +51,7 @@ const base = `import { defineLanguage } from './src/language/language.ts'; windo
 const languages = {
   javascript: ['javascript', 'javascript'], jsx: ['javascript', 'jsx'], typescript: ['typescript', 'typescript'], tsx: ['typescript', 'tsx'],
   json: ['json', 'json'], css: ['css', 'css'], 'html (+ JS + CSS)': ['html', 'html'], markdown: ['markdown', 'markdown'],
-  sql: ['sql', 'sql'], shell: ['shell', 'shell'], log: ['log', 'log'],
+  sql: ['sql', 'sql'], shell: ['shell', 'shell'], log: ['log', 'log'], go: ['go', 'go'],
 }
 const measure = async (contents) => {
   const out = await build({

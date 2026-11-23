@@ -16,10 +16,10 @@
       "name": "Jonacode",
       "setup": "basicSetup + JavaScript",
       "pkg": null,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "size": {
-        "jsMin": 119811,
-        "jsGzip": 40432,
+        "jsMin": 122848,
+        "jsGzip": 41428,
         "cssGzip": 0
       },
       "runtime": {
@@ -34,10 +34,10 @@
       "name": "Jonacode (núcleo)",
       "setup": "createEditor, sem linguagem",
       "pkg": null,
-      "version": "0.1.0",
+      "version": "0.2.0",
       "size": {
-        "jsMin": 80248,
-        "jsGzip": 27405,
+        "jsMin": 82891,
+        "jsGzip": 28259,
         "cssGzip": 0
       },
       "runtime": {

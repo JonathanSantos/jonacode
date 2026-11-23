@@ -5,7 +5,7 @@
   const $ = (s) => document.querySelector(s)
   const $$ = (s) => [...document.querySelectorAll(s)]
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
-  const LANGS = Object.fromEntries(['javascript', 'jsx', 'typescript', 'tsx', 'json', 'css', 'html', 'markdown', 'sql', 'shell', 'log'].filter((k) => J[k]).map((k) => [k, J[k]]))
+  const LANGS = Object.fromEntries(['javascript', 'jsx', 'typescript', 'tsx', 'json', 'css', 'html', 'markdown', 'sql', 'shell', 'log', 'go'].filter((k) => J[k]).map((k) => [k, J[k]]))
 
   // ------------------------------------------------------------------ presets
   const PRESETS = {

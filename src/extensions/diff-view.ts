@@ -455,6 +455,11 @@ export function diffView(options: DiffViewOptions): Extension {
     let last = ''
     const disposers: (() => void)[] = [
       editor.on('change', (e) => onEdit(editor, st, e.changes)),
+      // The original belongs to the document (`editor.setState`): a file that never had one is compared with itself.
+      editor.addStateField<string>('diffOriginal', {
+        save: () => getOriginal(editor)!,
+        restore: (original) => setOriginal(editor, original ?? editor.getValue()),
+      }),
       editor.addLayer({
         className: 'jc-diff-layer',
         order: -0.9,

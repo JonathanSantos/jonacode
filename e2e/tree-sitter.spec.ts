@@ -13,7 +13,7 @@ async function mountTS(page: Page, doc: string, language: string, extra: Record<
   await page.evaluate(async ([d, lang, g, x]) => {
     mount({
       value: d, language: lang,
-      extensions: [J.basicSetup(), J.treeSitter({ load: () => import('/node_modules/web-tree-sitter/web-tree-sitter.js'), grammars: g, delay: 40, ...x })],
+      extensions: [J.basicSetup(), J.treeSitter({ load: () => import('/node_modules/web-tree-sitter/web-tree-sitter.js' as string), grammars: g, delay: 40, ...x })],
     })
     await J.whenParsed(ed)
   }, [doc, language, GRAMMARS, extra] as const)
@@ -52,7 +52,7 @@ test.describe('tree-sitter', () => {
     const gaps = await page.evaluate(async (g) => {
       const unit = 'function f(a, b) {\n  const x = a + b * 2\n  if (x > 10) { return x } else { return -x }\n}\n'
       mount({ value: unit.repeat(5000), language: 'javascript', extensions: [J.basicSetup()] })
-      await settle()
+      await window.settle()
       // Frames while tree-sitter loads, parses the whole file and re-parses after an edit.
       let last = performance.now()
       let worst = 0
@@ -64,7 +64,7 @@ test.describe('tree-sitter', () => {
         if (running) requestAnimationFrame(tick)
       }
       requestAnimationFrame(tick)
-      ed.setExtensions([J.basicSetup(), J.treeSitter({ load: () => import('/node_modules/web-tree-sitter/web-tree-sitter.js'), grammars: g, delay: 20 })])
+      ed.setExtensions([J.basicSetup(), J.treeSitter({ load: () => import('/node_modules/web-tree-sitter/web-tree-sitter.js' as string), grammars: g, delay: 20 })])
       await J.whenParsed(ed)
       const first = worst
       worst = 0

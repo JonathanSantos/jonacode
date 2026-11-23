@@ -167,4 +167,33 @@ test.describe('go to line', () => {
     await expect(panel).toBeHidden()
     await expect(page.locator('.jc-input')).toBeFocused()
   })
+
+  test('on Windows and Linux, Ctrl-g is still "go to line" (not "find next"), with a search open too', async ({ page }) => {
+    // The library picks its bindings from the platform when it loads: say Linux, then load it again.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'platform', { get: () => 'Linux x86_64' })
+      Object.defineProperty(navigator, 'userAgentData', { get: () => ({ platform: 'Linux' }) })
+    })
+    await page.goto('/e2e/fixture.html')
+    await page.waitForFunction(() => window.fixtureReady)
+    await page.evaluate(() => void mount({ value: numberedLines(300), extensions: J.basicSetup() }))
+    await page.locator('.jc-content').click()
+    await page.keyboard.press('Control+g')
+    await expect(page.locator('.jc-goto')).toBeVisible()
+    await page.keyboard.type('150')
+    await page.keyboard.press('Enter')
+    expect(await head(page)).toEqual({ line: 149, col: 0 })
+    // With a query in the search panel: F3 finds the next match, Ctrl-g still goes to a line.
+    await page.keyboard.press('Control+f')
+    await page.keyboard.type('line20')
+    expect((await head(page)).line).toBe(199)
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('F3')
+    expect((await head(page)).line).toBe(200)
+    await page.keyboard.press('Control+g')
+    await expect(page.locator('.jc-goto')).toBeVisible()
+    await page.keyboard.type('7')
+    await page.keyboard.press('Enter')
+    expect(await head(page)).toEqual({ line: 6, col: 0 })
+  })
 })

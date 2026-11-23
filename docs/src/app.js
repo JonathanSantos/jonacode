@@ -29,9 +29,9 @@
 
   // ------------------------------------------------------------------ languages used by this page
   // The page highlights its own examples with the library's built-in languages.
-  const { jsx, typescript, tsx, json, css, html, markdown, createMarkdown, sql, shell, log } = J
-  const LANGS = { js: javascript, jsx, ts: typescript, tsx, json, css, html, md: markdown, sql, shell, log, text: plainText }
-  const LANG_LABEL = { js: 'JavaScript', jsx: 'JSX', ts: 'TypeScript', tsx: 'TSX', json: 'JSON', html: 'HTML', css: 'CSS', md: 'Markdown', sql: 'SQL', shell: 'shell', log: 'log', text: 'texto' }
+  const { jsx, typescript, tsx, json, css, html, markdown, createMarkdown, sql, shell, log, go } = J
+  const LANGS = { js: javascript, jsx, ts: typescript, tsx, json, css, html, md: markdown, sql, shell, log, go, text: plainText }
+  const LANG_LABEL = { js: 'JavaScript', jsx: 'JSX', ts: 'TypeScript', tsx: 'TSX', json: 'JSON', html: 'HTML', css: 'CSS', md: 'Markdown', sql: 'SQL', shell: 'shell', log: 'log', go: 'Go', text: 'texto' }
 
   // ------------------------------------------------------------------ helpers
   // The ready-made pack, with one text of our own (the touch bar is narrow).
@@ -298,6 +298,32 @@ editor.on('change', () => salvar(editor.getValue()))
       ['Quebra de linha', `editor.setOptions({ lineWrapping: true })`, () => ed.setOptions({ lineWrapping: !ed.options.lineWrapping })],
       ['Buscar', `openSearch(editor)`, () => openSearch(ed)],
     ]
+    // --- tabs: one editor, three files; each keeps its own text, undo history, cursor, scroll and locks
+    const FILES = {
+      'soma.js': { value: `// Esta primeira linha está travada só neste arquivo.\nexport function soma(a, b) {\n  return a + b\n}\n\n// Edite, troque de aba e volte: o desfazer é de cada arquivo.\n`, language: javascript },
+      'pontos.go': { value: `package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("o Go indenta com tab")\n}\n`, language: go },
+      'notas.md': { value: `# Notas\n\n- Cada aba é um \`getState()\` guardado\n- Voltar é um \`setState()\`\n`, language: markdown },
+    }
+    let open = 'soma.js'
+    const tabsEd = frame($('#tabs-editor'), { ...FILES[open], extensions: [basicSetup(), J.readOnlyRanges([])] })
+    setReadOnlyRanges(tabsEd, [lineRange(tabsEd, 1, 1, { sticky: true })])
+    const tabs = $('#tabs-bar')
+    const drawTabs = () => {
+      tabs.innerHTML = Object.keys(FILES).map((name) => `<button class="preset" type="button" role="tab" aria-pressed="${name === open}" data-file="${esc(name)}">${esc(name)}</button>`).join('')
+      $('#tabs-info').textContent = `${tabsEd.canUndo ? 'tem o que desfazer' : 'sem histórico'} · ${J.getReadOnlyRanges(tabsEd).length} faixa travada`
+    }
+    tabs.addEventListener('click', (e) => {
+      const name = e.target.closest('.preset')?.dataset.file
+      if (!name || name === open) return
+      FILES[open] = tabsEd.getState()
+      tabsEd.setState(FILES[name])
+      open = name
+      drawTabs()
+      tabsEd.focus()
+    })
+    tabsEd.on('change', () => requestAnimationFrame(drawTabs))
+    drawTabs()
+
     const box = $('#api-buttons')
     for (const [label, code, run] of actions) {
       const b = document.createElement('button')
@@ -671,11 +697,13 @@ const aviso = \`Total: \${total([])}\` // ok`
       ['html', 'HTML', html, 'html', 'index.html', '#e06c75',
         "<!doctype html>\n<html lang=\"pt-BR\">\n  <head>\n    <style>\n      .destaque { color: #61afef; }\n    </style>\n  </head>\n  <body>\n    <!-- JavaScript e CSS dentro do HTML -->\n    <button class=\"destaque\" onclick=\"contar()\">Contar &rarr;</button>\n    <script type=\"module\">\n      let n = 0\n      window.contar = () => console.log(`cliques: ${++n}`)\n    </" + "script>\n  </body>\n</html>"],
       ['markdown', 'Markdown', mdLang, 'markdown', 'LEIAME.md', '#abb2bf',
-        "---\ntitulo: Jonacode\n---\n# Um editor **leve**\n\nTexto com *ênfase*, `código` e [link](https://jonacode.dev).\n\n- [x] 11 linguagens prontas\n- [x] autocomplete\n- [ ] LSP\n\n> Blocos de código usam a linguagem indicada:\n\n```ts\nconst editor: Editor = createEditor(el)\n```\n\n| Linguagem | Tamanho |\n|-----------|--------:|\n| JSON      | 0,4 kB  |"],
+        "---\ntitulo: Jonacode\n---\n# Um editor **leve**\n\nTexto com *ênfase*, `código` e [link](https://jonacode.dev).\n\n- [x] 12 linguagens prontas\n- [x] autocomplete\n- [ ] LSP\n\n> Blocos de código usam a linguagem indicada:\n\n```ts\nconst editor: Editor = createEditor(el)\n```\n\n| Linguagem | Tamanho |\n|-----------|--------:|\n| JSON      | 0,4 kB  |"],
       ['sql', 'SQL', sql, 'sql', 'relatorio.sql', '#d19a66',
         "-- clientes com mais pedidos\nWITH ativos AS (\n  SELECT c.id, c.nome, COUNT(p.id) AS pedidos\n  FROM clientes c\n  LEFT JOIN pedidos p ON p.cliente_id = c.id\n  WHERE c.criado_em > $1 AND c.email LIKE '%@exemplo.com'\n  GROUP BY c.id, c.nome\n)\nSELECT * FROM ativos ORDER BY pedidos DESC LIMIT 10;"],
       ['log', 'Log', log, 'log', 'app.log', '#e06c75',
         "2026-09-26T10:00:01.214Z INFO  [http] GET /api/pedidos status=200 duration=12ms ip=10.0.0.7\n2026-09-26T10:00:01.502Z WARN  [http] Resposta lenta POST /api/busca?q=editor duration=1840ms\n2026-09-26T10:00:02.033Z ERROR [worker-2] Falha ao processar pedido id=3f9a2c7e-1b2d-4c5e-9f00-12ab34cd56ef\nTypeError: Cannot read properties of undefined (reading 'valor')\n    at calcularTotal (src/pedidos.js:42:17)\n    at processar (src/worker.js:88:5)\n127.0.0.1 - - [26/Sep/2026:10:00:03 +0000] \"GET /static/app.js HTTP/1.1\" 304 0\nlevel=debug msg=\"cache hit\" key=usuario:42 took=0.8ms"],
+      ['go', 'Go', go, 'go', 'pontos.go', '#56b6c2',
+        "package main\n\nimport \"fmt\"\n\n// Ponto no plano.\ntype Ponto struct {\n\tX, Y float64\n}\n\nfunc (p Ponto) Soma(q Ponto) Ponto {\n\treturn Ponto{X: p.X + q.X, Y: p.Y + q.Y}\n}\n\nfunc main() {\n\tpontos := []Ponto{{1, 2}, {3.5, 0x10}}\n\ttotal := Ponto{}\n\tfor i, p := range pontos {\n\t\ttotal = total.Soma(p)\n\t\tfmt.Printf(\"%d: %v\\n\", i, p)\n\t}\n\tif len(pontos) > 1 {\n\t\tfmt.Println(`total:`, total)\n\t}\n}"],
       ['shell', 'Shell', shell, 'shell', 'deploy.sh', '#7f848e',
         "#!/usr/bin/env bash\nset -euo pipefail\n\nfor arquivo in dist/*.js; do\n  if [[ -f \"$arquivo\" && $arquivo != *.map ]]; then\n    gzip -9 -k \"$arquivo\" && echo \"ok ${arquivo##*/}\"\n  fi\ndone\n\ncat <<EOF > versao.txt\npublicado em $(date +%F) por $USER\nEOF"],
     ]

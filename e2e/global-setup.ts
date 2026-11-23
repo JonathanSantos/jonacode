@@ -35,6 +35,12 @@ export default async function globalSetup() {
   })
   // Yjs for the collaboration specs (a separate file: the library itself never imports it).
   await build({ absWorkingDir: root, entryPoints: ['e2e/yjs-entry.ts'], outfile: join(outdir, 'yjs.js'), bundle: true, format: 'esm', target: 'es2022', logLevel: 'warning' })
+  // The React and Vue adapters, with the frameworks and their own copy of the core (see adapters-entry.ts).
+  await build({
+    absWorkingDir: root, entryPoints: ['e2e/adapters-entry.ts'], outfile: join(outdir, 'adapters.js'), bundle: true, format: 'esm', target: 'es2022',
+    define: { 'process.env.NODE_ENV': '"development"', __VUE_OPTIONS_API__: 'true', __VUE_PROD_DEVTOOLS__: 'false', __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' },
+    logLevel: 'warning',
+  })
   // `all.js`: every export in one namespace, for `window.J` in the fixture page.
   const modules = ['./index.js', './adapters/element.js', ...languages.map((f) => `./languages/${f.replace(/\.ts$/, '.js')}`),
     ...themes.map((f) => `./themes/${f.replace(/\.ts$/, '.js')}`), ...locales.map((f) => `./locales/${f.replace(/\.ts$/, '.js')}`)]

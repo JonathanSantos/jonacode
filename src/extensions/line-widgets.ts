@@ -73,6 +73,7 @@ export function lineWidgets(source: LineWidgetSource, options: LineWidgetsOption
   return (editor) => {
     const entries = new Map<string, Entry>()
     let timer: ReturnType<typeof setTimeout> | undefined
+    let alive = true
 
     /** The zone's version of a widget: callbacks go through the entry, so they are always the latest. */
     const zoneSpec = (w: LineWidget, patch: Partial<ZoneSpec>): Partial<ZoneSpec> => {
@@ -117,12 +118,15 @@ export function lineWidgets(source: LineWidgetSource, options: LineWidgetsOption
     let set = refreshers.get(editor)
     if (!set) refreshers.set(editor, (set = new Set()))
     set.add(sync)
-    const off = editor.on('change', () => {
+    const off = editor.on('change', ({ origin }) => {
       clearTimeout(timer)
-      timer = setTimeout(sync, options.delay ?? 250)
+      // Another document (`setValue`, `setState`): now, once everyone has seen the change, not after the delay.
+      if (origin === 'setValue') queueMicrotask(() => alive && sync())
+      else timer = setTimeout(sync, options.delay ?? 250)
     })
     sync()
     return () => {
+      alive = false
       off()
       clearTimeout(timer)
       set.delete(sync)

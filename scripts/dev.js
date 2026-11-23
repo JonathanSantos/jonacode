@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process'
 import { createReadStream, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, normalize, resolve } from 'node:path'
+import { fixDeclarations } from './fix-dts.js'
 
 const root = resolve(import.meta.dirname, '..')
 const port = Number(process.env.PORT) || 5173
@@ -13,7 +14,20 @@ const types = {
 }
 
 if (!process.argv.includes('--no-watch')) {
-  spawn('npx', ['tsc', '-p', 'tsconfig.build.json', '--watch', '--preserveWatchOutput'], { cwd: root, stdio: 'inherit' })
+  const tsc = spawn('npx', ['tsc', '-p', 'tsconfig.build.json', '--watch', '--preserveWatchOutput'], { cwd: root, stdio: ['inherit', 'pipe', 'inherit'] })
+  // tsc leaves `.ts` specifiers in the declarations it emits: fix them after each compilation, like the build does.
+  let timer
+  tsc.stdout.on('data', (chunk) => {
+    process.stdout.write(chunk)
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      try {
+        fixDeclarations()
+      } catch {
+        // dist isn't there yet (first compilation still running)
+      }
+    }, 300)
+  })
 }
 
 createServer((req, res) => {

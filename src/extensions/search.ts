@@ -912,7 +912,8 @@ export const searchKeymap: readonly KeyBinding[] = [
   { key: 'Mod-f', run: openSearch },
   { key: 'Mod-Alt-f', win: 'Ctrl-h', linux: 'Ctrl-h', run: openReplace },
   { key: 'F3', run: findNext, shift: findPrevious },
-  { key: 'Mod-g', run: findNext, shift: findPrevious },
+  // macOS only (Cmd-g): elsewhere Mod-g is Ctrl-g, which is "go to line" (as in VS Code), and F3 finds the next one.
+  { mac: 'Mod-g', run: findNext, shift: findPrevious },
   { key: 'Escape', run: closeSearch },
 ]
 

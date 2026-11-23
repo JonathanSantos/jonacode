@@ -6,7 +6,7 @@ import { compileKeymap, eventKeyNames, isMac, runKeymap, type CompiledKeymap, ty
 import { matchBracket } from './language/brackets.ts'
 import { Highlighter } from './language/highlighter.ts'
 import { innerLanguage, plainText, type Language, type State, type Token } from './language/language.ts'
-import { History, invertChanges, type HistoryEntry } from './state/history.ts'
+import { History, invertChanges, type HistoryEntry, type HistorySnapshot } from './state/history.ts'
 import {
   cursor, eqSelections, isEmpty, mapRange, mapSelection, normalizeSelection, selFrom, selTo, toEditorSelection,
   type EditorSelection, type Selection, type SelectionInput,
@@ -116,6 +116,37 @@ export interface EditorEvents {
   /** Folded (hidden) line ranges changed. */
   fold: (folds: readonly FoldRange[], editor: Editor) => void
   destroy: (editor: Editor) => void
+}
+
+/**
+ * A document as the editor holds it: what `getState()` saves and `setState()`
+ * brings back, so one editor can show many files (tabs) and return to each
+ * exactly as it was left. A new file is just `{ value }`. A state lives in
+ * memory: it holds the language and what extensions saved, so it isn't JSON.
+ */
+export interface EditorState {
+  /** The text. */
+  value: string
+  /** Its language (the editor keeps the current one when left out). */
+  language?: Language
+  /** The selection (default: the start of the document). */
+  selection?: EditorSelection
+  /** Scroll position, in px (default: the top). */
+  scroll?: { top: number; left: number }
+  /** Folded line ranges. */
+  folds?: readonly FoldRange[]
+  /** The undo history, as `getState()` gave it. Without it the document starts with none. */
+  history?: unknown
+  /** What extensions keep per document (read-only ranges, diagnostics…), by field name. See `addStateField`. */
+  fields?: Readonly<Record<string, unknown>>
+}
+
+/** Something an extension keeps per document. See `Editor.addStateField`. */
+export interface StateField<T = unknown> {
+  /** The value to keep with the document that is leaving. */
+  save(): T
+  /** The value saved with the document that arrived; `undefined` when it has none (a new file). */
+  restore(value: T | undefined): void
 }
 
 /** Lines `from..to` (inclusive) are hidden under line `from - 1`. */
@@ -385,6 +416,7 @@ export class Editor {
   private collecting: (() => void)[] | null = null
   private scope = END
   private scopes = new WeakMap<object, Scope>()
+  private stateFields = new Map<string, StateField>()
   private disposers: (() => void)[] = []
   private resizeObserver: ResizeObserver | null = null
 
@@ -620,10 +652,74 @@ export class Editor {
 
   /** Replaces the whole document (resets the undo history, keeps the cursor when possible). */
   setValue(value: string): void {
+    this.load(value, this._sel)
+  }
+
+  /**
+   * The document as it is now: text, language, selection, scroll, folds, undo
+   * history and what extensions keep per document. Keep it to come back to
+   * this file later with `setState()` (tabs).
+   */
+  getState(): EditorState {
+    const fields: Record<string, unknown> = {}
+    for (const [key, field] of this.stateFields) fields[key] = field.save()
+    const sc = this.scrollDOM
+    return {
+      value: this.getValue(),
+      language: this._language,
+      selection: this._sel,
+      scroll: { top: this.big ? this.bigTop : sc.scrollTop, left: sc.scrollLeft },
+      folds: this._folds,
+      history: this.undoProvider ? undefined : this.history.snapshot(),
+      fields,
+    }
+  }
+
+  /**
+   * Shows another document in this editor: one from `getState()`, back as it
+   * was left (undo history included), or a new one (`{ value, language? }`).
+   * Extensions see it as `setValue` does (a `change` with origin `setValue`),
+   * then get back what they kept for that document.
+   */
+  setState(state: EditorState): void {
+    if (state.language && state.language !== this._language) {
+      this._language = state.language
+      this.hl.reset(state.language)
+      this.applyIndent()
+      this.invalidateLines()
+    }
+    this.load(state.value, state.selection ?? { ranges: [cursor({ line: 0, col: 0 })], main: 0 }, state.history as HistorySnapshot | undefined)
+    this.emit('selection', this.selection, this)
+    if (state.folds?.length) this.setFolds(state.folds)
+    for (const [key, field] of this.stateFields) field.restore(state.fields?.[key])
+    // Sizes first, then the place: the scroll position means nothing before the new heights are known.
+    this.render()
+    const { top = 0, left = 0 } = state.scroll ?? {}
+    if (this.big) this.scrollToReal(top)
+    else this.scrollDOM.scrollTop = top
+    this.scrollDOM.scrollLeft = left
+    this.render()
+  }
+
+  /**
+   * Lets an extension keep something per document: `save()` is called by
+   * `getState()`, and `restore()` by `setState()` with what was saved for the
+   * document that arrives. Read-only ranges and diagnostics travel this way.
+   */
+  addStateField<T>(key: string, field: StateField<T>): () => void {
+    this.stateFields.set(key, field as StateField)
+    return this.track(() => {
+      if (this.stateFields.get(key) === field) this.stateFields.delete(key)
+    })
+  }
+
+  /** The document becomes `value`: one `change` event (origin `setValue`), no undo step. */
+  private load(value: string, selection: EditorSelection, history?: HistorySnapshot): void {
     const oldEnd = this.doc.end
     const removed = this.doc.setText(value)
     this.hl.reset()
     this.history.clear()
+    if (history) this.history.restore(history)
     this.version++
     this.maxCols = this.computeMaxCols()
     const hadFolds = this._folds.length > 0
@@ -632,8 +728,8 @@ export class Editor {
     if (hadFolds) this.emit('fold', this._folds, this)
     const doc = this.doc
     this._sel = normalizeSelection({
-      ranges: this._sel.ranges.map((r) => ({ anchor: doc.clamp(r.anchor), head: doc.clamp(r.head) })),
-      main: this._sel.main,
+      ranges: selection.ranges.map((r) => ({ anchor: doc.clamp(r.anchor), head: doc.clamp(r.head) })),
+      main: selection.main,
     })
     this.requestRender()
     const event: ChangeEvent = {

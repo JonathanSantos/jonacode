@@ -164,6 +164,7 @@ export function fakeEditor(text = '', options: { language?: Language; readOnly?:
       return () => filters.splice(filters.indexOf(f), 1)
     },
     addKeymap: () => () => {},
+    addStateField: () => () => {},
     addLayer: () => () => {},
     addGutter: () => () => {},
     untracked: <T>(fn: () => T): T => fn(),

@@ -7,8 +7,8 @@
 
 export { Editor, createEditor } from './editor.ts'
 export type {
-  ChangeEvent, ChangeFilter, Coords, CursorModifier, EditorEvents, EditorOptions, Extension, FoldRange, GutterCell, GutterSpec, InputHandler,
-  LayerSpec, LineGap, MouseHandler, UndoProvider, RangeChange, Rect, ResolvedOptions, TokenTransform, Transaction,
+  ChangeEvent, ChangeFilter, Coords, CursorModifier, EditorEvents, EditorOptions, EditorState, Extension, FoldRange, GutterCell, GutterSpec,
+  InputHandler, LayerSpec, LineGap, MouseHandler, UndoProvider, RangeChange, Rect, ResolvedOptions, StateField, TokenTransform, Transaction,
 } from './editor.ts'
 
 export { compartment, type Compartment } from './compartment.ts'

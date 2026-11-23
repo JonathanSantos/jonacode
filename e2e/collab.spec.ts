@@ -5,6 +5,7 @@ import { charCenter, expect, test } from './helpers.ts'
 /** Mounts Ana (left) and Bia (right) on a shared Yjs text. */
 async function twoPeople(page: Page, doc = '', extra: Record<string, unknown> = {}) {
   await page.evaluate(async ([initial, x]) => {
+    // @ts-expect-error built by global-setup.ts (untyped, and not there before the first run)
     const { Y, Awareness, applyAwarenessUpdate, encodeAwarenessUpdate } = await import('./.build/yjs.js')
     const app = document.getElementById('app')!
     app.replaceChildren()

@@ -55,6 +55,7 @@
             <li><a href="#comecando/primeiro">Primeiro editor</a></li>
             <li><a href="#comecando/opcoes">Opções</a></li>
             <li><a href="#comecando/api">Controlando o editor</a></li>
+            <li><a href="#comecando/abas">Vários arquivos (abas)</a></li>
             <li><a href="#comecando/estatico">Só destacar, sem editor</a></li>
             <li><a href="#comecando/sob-demanda">Editor sob demanda</a></li>
           </ul>
@@ -184,7 +185,7 @@
     <a class="card" href="#por-dentro/multicursor" style="--c:var(--purple);--w:30px"><h3>Vários cursores</h3><p>Alt+clique, seleção em coluna e <kbd>Mod</kbd>+<kbd>D</kbd>, e todo comando age em todos os cursores.</p><code>editor.setSelections([…])</code></a>
     <a class="card" href="#extensoes/busca" style="--c:var(--green);--w:52px"><h3>Busca e substituição</h3><p>Regex, maiúsculas e palavra inteira, com substituição que aceita <code style="font-size:12px">$1</code>.</p><code>search() · Mod-f</code></a>
     <a class="card" href="#por-dentro/quebra" style="--c:var(--orange);--w:34px"><h3>Quebra de linha e mobile</h3><p>Quebra calculada em JS, gestos de toque, alças de seleção e teclado virtual.</p><code>lineWrapping: true</code></a>
-    <a class="card" href="#linguagens/prontas" style="--c:var(--red);--w:48px"><h3>11 linguagens prontas</h3><p>JavaScript, TypeScript, JSX, JSON, CSS, HTML, Markdown, SQL, shell e logs, uma por import.</p><code>import { html } from 'jonacode/languages/html'</code></a>
+    <a class="card" href="#linguagens/prontas" style="--c:var(--red);--w:48px"><h3>12 linguagens prontas</h3><p>JavaScript, TypeScript, JSX, JSON, CSS, HTML, Markdown, SQL, shell e logs, uma por import.</p><code>import { html } from 'jonacode/languages/html'</code></a>
     <a class="card" href="#por-dentro/altura" style="--c:var(--cyan);--w:24px"><h3>Cresce com a página</h3><p>Sem altura fixa, acompanha o conteúdo e continua desenhando só o que está na tela.</p><code>minLines: 5 · maxLines: 30</code></a>
     <a class="card" href="#por-dentro/acessibilidade" style="--c:var(--green);--w:70px"><h3>Leitor de tela</h3><p>O campo escondido espelha o texto em volta do cursor, lido como um campo nativo.</p><code>Esc, Tab → sai do editor</code></a>
     <a class="card" href="#ia" style="--c:var(--magenta);--w:44px"><h3>Pronto para IA</h3><p>Ferramentas prontas para modelos, edições no formato da IA, texto fantasma e <kbd>Mod</kbd>+<kbd>K</kbd>.</p><code>editorTools(editor)</code></a>
@@ -250,7 +251,7 @@
   <div class="choose" id="choose"></div>
 
   <h2 id="lacunas">Onde ainda perdemos</h2>
-  <p>O núcleo técnico já compete com os grandes; o que falta é maturidade. Nas últimas rodadas entraram 11 linguagens prontas (com aninhamento), o editor que cresce com a página, o leitor de tela, a validação no Android, o destaque estático que vira editor sob demanda, o visualizador de logs, mais de 1 milhão de linhas, o campo de formulário nativo, os importadores de temas do VS Code e de gramáticas do Monaco, o laboratório com testes de gramática, marcações, tooltips, diagnósticos, autocomplete, folding e busca em várias linhas, o <a href="#ia">capítulo de IA</a> (ferramentas para agentes, edições no formato da IA, diff com revisão, texto fantasma e Ctrl/⌘+K), a <a href="#extensoes/tree-sitter">validação com tree-sitter</a> (árvore sintática e seleção por estrutura), a <a href="#extensoes/colaboracao">edição colaborativa</a> com Yjs, as <a href="#extensoes/zonas">zonas entre linhas</a>, o suporte a <a href="#por-dentro/fontes">qualquer fonte</a> e mais de 400 testes de interface em Chromium, Firefox e WebKit, que já acharam e corrigiram 15 bugs. Estas são as lacunas que sobram, na ordem em que pretendemos atacá-las:</p>
+  <p>O núcleo técnico já compete com os grandes; o que falta é maturidade. Nas últimas rodadas entraram 12 linguagens prontas (com aninhamento), o editor que cresce com a página, o leitor de tela, a validação no Android, o destaque estático que vira editor sob demanda, o visualizador de logs, mais de 1 milhão de linhas, o campo de formulário nativo, os importadores de temas do VS Code e de gramáticas do Monaco, o laboratório com testes de gramática, marcações, tooltips, diagnósticos, autocomplete, folding e busca em várias linhas, o <a href="#ia">capítulo de IA</a> (ferramentas para agentes, edições no formato da IA, diff com revisão, texto fantasma e Ctrl/⌘+K), a <a href="#extensoes/tree-sitter">validação com tree-sitter</a> (árvore sintática e seleção por estrutura), a <a href="#extensoes/colaboracao">edição colaborativa</a> com Yjs, as <a href="#extensoes/zonas">zonas entre linhas</a>, o suporte a <a href="#por-dentro/fontes">qualquer fonte</a> e mais de 400 testes de interface em Chromium, Firefox e WebKit, que já acharam e corrigiram 15 bugs. Estas são as lacunas que sobram, na ordem em que pretendemos atacá-las:</p>
   <ol class="roadmap">
     <li><b>Confiabilidade.</b> Validação no iOS; teste com NVDA, VoiceOver e TalkBack; CI rodando no GitHub e publicação no npm.</li>
     <li><b>Linguagem de verdade.</b> Integração com LSP (em um worker) para autocomplete, diagnósticos e tooltips com tipos; folding pela árvore do tree-sitter.</li>
@@ -374,6 +375,20 @@ const extensions = [lineNumbers(), highlightActiveLine(), bracketMatching(), clo
     <div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title" id="api-last">editor.getValue()</span></div>
     <div id="api-editor" style="height:230px"></div>
   </div>
+
+  <h2 id="abas">Vários arquivos num editor <span class="tag">ao vivo</span></h2>
+  <p>Um editor só pode mostrar vários arquivos. <code>getState()</code> devolve o documento como está agora e <code>setState()</code> mostra outro; ao voltar, o arquivo está como você deixou: texto, linguagem, cursor, rolagem, dobras e o <strong>histórico de desfazer dele</strong>. As faixas travadas e os diagnósticos são do documento e vão junto. Edite, troque de aba e use <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> em cada uma:</p>
+  <div class="presets" id="tabs-bar" role="tablist" aria-label="Arquivos abertos"></div>
+  <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title">um editor, três arquivos</span><span class="right mono" id="tabs-info"></span></div><div id="tabs-editor" style="height:210px"></div></div>
+  <textarea class="snippet" data-lang="js" data-file="abas.js">const abas = new Map()                       // caminho → estado guardado
+let atual = 'main.go'
+
+function abrir(caminho, texto, linguagem) {
+  abas.set(atual, editor.getState())         // guarda o que está na tela
+  editor.setState(abas.get(caminho) ?? { value: texto, language: linguagem })
+  atual = caminho
+}</textarea>
+  <p class="note">Para as extensões a troca é um <code>setValue</code> (um <code>change</code> com essa origem), e <code>lineWidgets()</code> recalcula na hora. Zonas e marcações criadas por você são do editor, não do documento. Para guardar dados seus por arquivo: <code>editor.addStateField(chave, { save, restore })</code>.</p>
 
   <h2 id="estatico">Só destacar, sem editor <span class="tag">SSR</span></h2>
   <p>Para blocos de código que ninguém vai editar (um blog, uma página de documentação), você não precisa do editor. <code>highlight()</code> usa as mesmas gramáticas e temas e devolve uma string de HTML, sem tocar no DOM: roda no servidor, num gerador de site estático ou no navegador.</p>
@@ -704,7 +719,7 @@ fromVSCodeTheme(texto, { include: (caminho) => arquivos[caminho] })</textarea>
   <p class="lead">Uma linguagem é uma máquina de estados declarativa. Cada estado tem uma lista ordenada de regras: uma regex e o token que ela produz. Regras podem empilhar, desempilhar ou trocar de estado, e é assim que comentários de várias linhas e template strings aninhadas funcionam.</p>
 
   <h2 id="prontas">Linguagens prontas <span class="tag">ao vivo</span></h2>
-  <p>Onze linguagens vêm com a biblioteca, cada uma em seu próprio módulo: importe só as que usar. O HTML já traz JavaScript e CSS dentro, e o Markdown colore os blocos de código com as linguagens que você passar. Escolha uma e edite à vontade:</p>
+  <p>Doze linguagens vêm com a biblioteca, cada uma em seu próprio módulo: importe só as que usar. O HTML já traz JavaScript e CSS dentro, e o Markdown colore os blocos de código com as linguagens que você passar. Escolha uma e edite à vontade:</p>
   <div class="langs-demo">
     <div class="presets" id="langs-tabs" role="tablist" aria-label="Linguagens prontas"></div>
     <div class="live"><div class="live-bar"><span class="dots"><i></i><i></i><i></i></span><span class="title" id="langs-file">exemplo</span><span class="right mono" id="langs-meta"></span></div><div class="host" id="langs-editor"></div></div>
@@ -719,7 +734,7 @@ createEditor(el, { language: html, extensions: basicSetup() })
 
 // Markdown com cor nos blocos ```ts e ```html
 const markdown = createMarkdown({ codeLanguages: [typescript, html] })</textarea>
-  <p class="note">Sem bundler, o arquivo <code>dist/jonacode.languages.iife.min.js</code> (~10 kB gzip) acrescenta todas ao global <code>Jonacode</code>, reaproveitando o núcleo do <code>jonacode.iife.min.js</code>.</p>
+  <p class="note">Sem bundler, o arquivo <code>dist/jonacode.languages.iife.min.js</code> (~11 kB gzip) acrescenta todas ao global <code>Jonacode</code>, reaproveitando o núcleo do <code>jonacode.iife.min.js</code>.</p>
 
   <h2 id="regras">Estados e regras</h2>
   <textarea class="snippet" data-lang="js" data-file="ini.js">import { defineLanguage } from 'jonacode'

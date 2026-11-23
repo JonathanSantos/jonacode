@@ -20,8 +20,11 @@ import { injectStyle } from './view/style.ts'
 export interface HighlightOptions {
   /** Adds the theme's class. Its CSS has to be in the page: `ensureHighlightStyles(root, theme)`, or `highlightStyles(theme)` on a server. */
   theme?: Theme
-  /** Line numbers, drawn with CSS counters (they're not copied with the text). */
-  lineNumbers?: boolean
+  /**
+   * Line numbers, drawn with CSS counters (they're not copied with the text). An object sets the
+   * space around them, like `lineNumbers({ padding })` in the editor.
+   */
+  lineNumbers?: boolean | { padding?: number | { left?: number; right?: number } }
   /** Number of the first line. Default 1. */
   firstLine?: number
   tabSize?: number
@@ -56,6 +59,11 @@ export function highlight(code: string, language: Language = plainText, options:
   if (x != null) style += `--jc-pad-x:${Math.max(0, x)}px;`
   if (y != null) style += `--jc-pad-y:${Math.max(0, y)}px;`
   if (options.lineNumbers) {
+    const pad = typeof options.lineNumbers === 'object' ? options.lineNumbers.padding : undefined
+    const left = typeof pad === 'object' ? pad.left : undefined
+    const right = typeof pad === 'object' ? pad.right : pad
+    if (left != null) style += `--jc-ln-pad-l:${Math.max(0, left)}px;`
+    if (right != null) style += `--jc-ln-pad-r:${Math.max(0, right)}px;`
     style += `--jc-ln-chars:${Math.max(2, String(first + lines.length - 1).length)};`
     if (first !== 1) style += `counter-reset:jc-line ${first - 1};`
   }
@@ -65,7 +73,8 @@ export function highlight(code: string, language: Language = plainText, options:
 /**
  * Structural CSS of static blocks. Mirrors the editor: 8px vertical padding,
  * 12px before the text (`--jc-pad-y` / `--jc-pad-x`, see the `padding` option), the line-number gutter
- * (`Nch + 26px`, rounded up to whole pixels) and the line height rounded to whole pixels like the editor measures it.
+ * (`Nch` plus its padding, 16px + 10px by default, rounded up to whole pixels) and the line height rounded to whole
+ * pixels like the editor measures it.
  */
 export const STATIC_CSS = `
 .jc-static{margin:0;padding:var(--jc-pad-y,8px) 0;overflow:auto;box-sizing:border-box;background:var(--jc-bg);color:var(--jc-fg);text-align:left;direction:ltr;
@@ -74,8 +83,9 @@ font-size:var(--jc-font-size,14px);line-height:var(--jc-line-height,1.6);line-he
 font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0;white-space:pre;tab-size:var(--jc-tab-size,4);-webkit-text-size-adjust:none;text-size-adjust:none;counter-reset:jc-line}
 .jc-static code{display:block;min-width:max-content;padding:0 var(--jc-pad-x,12px);font:inherit;background:none;color:inherit}
 .jc-static-ln code{padding-left:0}
-.jc-static-ln .jc-l::before{counter-increment:jc-line;content:counter(jc-line);display:inline-block;box-sizing:border-box;width:calc(var(--jc-ln-chars,2) * 1ch + 27px);width:calc(round(up,var(--jc-ln-chars,2) * 1ch + 26px,1px) + 1px);
-margin-right:var(--jc-pad-x,12px);padding:0 10px 0 16px;text-align:right;color:var(--jc-gutter-foreground);background:var(--jc-gutter-background);
+.jc-static-ln .jc-l::before{counter-increment:jc-line;content:counter(jc-line);display:inline-block;box-sizing:border-box;width:calc(var(--jc-ln-chars,2) * 1ch + var(--jc-ln-pad-l,16px) + var(--jc-ln-pad-r,10px) + 1px);
+width:calc(round(up,var(--jc-ln-chars,2) * 1ch + var(--jc-ln-pad-l,16px) + var(--jc-ln-pad-r,10px),1px) + 1px);
+margin-right:var(--jc-pad-x,12px);padding:0 var(--jc-ln-pad-r,10px) 0 var(--jc-ln-pad-l,16px);text-align:right;color:var(--jc-gutter-foreground);background:var(--jc-gutter-background);
 border-right:1px solid var(--jc-gutter-border);font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none}
 `
 

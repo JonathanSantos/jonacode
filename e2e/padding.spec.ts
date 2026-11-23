@@ -134,6 +134,28 @@ test.describe('padding', () => {
   })
 })
 
+test('lazyEditor() mirrors the space around the line numbers too', async ({ page }) => {
+  await page.evaluate((code) => {
+    document.getElementById('app')!.innerHTML = '<div id="lazy" style="width:420px;height:220px"></div>'
+    const numbers = { padding: { left: 6, right: 4 } }
+    J.lazyEditor(document.getElementById('lazy'), { value: code, lineNumbers: numbers, extensions: J.basicSetup({ lineNumbers: numbers }), padding: { x: 5 } })
+      .ready.then((e: any) => { window.ed = e })
+  }, DOC)
+  const first = () => page.evaluate(() => {
+    const range = document.createRange()
+    range.selectNodeContents(document.querySelector('.jc-static .jc-l') ?? lineEl(0)!)
+    return range.getClientRects()[0]!.left
+  })
+  const before = await first()
+  // Narrower than the default gutter (16 + 10): the text starts further left than it would.
+  const host = await page.evaluate(() => document.getElementById('lazy')!.getBoundingClientRect().left)
+  expect(before - host).toBeLessThan(40)
+  await page.locator('.jc-static').focus()
+  await page.waitForFunction(() => window.ed)
+  await settle(page)
+  expect(Math.abs((await first()) - before)).toBeLessThan(1)
+})
+
 test.describe('diagnostics gutter', () => {
   const problems = [
     { from: { line: 1, col: 2 }, to: { line: 1, col: 8 }, severity: 'warning', message: 'careful' },

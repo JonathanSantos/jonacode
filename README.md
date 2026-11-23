@@ -9,7 +9,7 @@
   <a href="LICENSE"><img alt="licença MIT" src="https://img.shields.io/badge/licen%C3%A7a-MIT-e5c07b?style=flat-square&labelColor=282c34"></a>
 </p>
 
-**Jonacode** (Jona + code) é um editor de código para a web: pequeno, modular e rápido. Ele traz destaque de sintaxe com **11 linguagens prontas** (e as ~80 do Monaco via importador), **lista virtualizada** para arquivos enormes, tema **One Dark** por padrão e uma API declarativa para criar linguagens, inclusive inventadas. Funciona em HTML puro (sem bundler), React, Vue, Angular, Svelte ou em qualquer lugar onde exista um `<div>`.
+**Jonacode** (Jona + code) é um editor de código para a web: pequeno, modular e rápido. Ele traz destaque de sintaxe com **12 linguagens prontas** (e as ~80 do Monaco via importador), **lista virtualizada** para arquivos enormes, tema **One Dark** por padrão e uma API declarativa para criar linguagens, inclusive inventadas. Funciona em HTML puro (sem bundler), React, Vue, Angular, Svelte ou em qualquer lugar onde exista um `<div>`.
 
 <table>
   <tr>
@@ -33,7 +33,7 @@
 - [Instalação](#instalação)
 - [Uso rápido](#uso-rápido)
 - [Frameworks](#frameworks) · [React](#react) · [Vue](#vue) · [Web Component e Angular](#web-component-e-angular)
-- [Opções](#opções) · [Recuo e calhas](#recuo-e-calhas) · [Traduções](#traduções) · [API](#api)
+- [Opções](#opções) · [Recuo e calhas](#recuo-e-calhas) · [Traduções](#traduções) · [API](#api) · [Vários arquivos num editor](#vários-arquivos-num-editor-abas)
 - [Destaque estático e editor sob demanda](#destaque-estático-e-editor-sob-demanda) · [Em formulários](#em-formulários)
 - [Múltiplos cursores](#múltiplos-cursores) · [Quebra de linha](#quebra-de-linha) · [Altura automática](#altura-automática) · [Fontes e tamanhos](#fontes-e-tamanhos) · [Busca e substituição](#busca-e-substituição) · [Mobile](#mobile) · [Acessibilidade](#acessibilidade)
 - [Arquivos gigantes e logs](#arquivos-gigantes-e-logs)
@@ -63,7 +63,7 @@
 | 🧩 **Modular de verdade** | Um módulo ESM por recurso e `"sideEffects": false`. O bundler descarta o que você não importa. |
 | 🎨 **Temas por CSS** | Um objeto vira variáveis CSS e classes. `extends` herda um tema e troca só o que você quiser. |
 | 🔤 **Linguagens declarativas** | Estados + regex, no estilo Monarch. Uma linguagem nova cabe em 30 linhas. |
-| 🗂️ **11 linguagens prontas** | JavaScript, JSX, TypeScript, TSX, JSON, CSS, HTML (com JS e CSS dentro), Markdown, SQL, shell e logs, uma por import. |
+| 🗂️ **12 linguagens prontas** | JavaScript, JSX, TypeScript, TSX, JSON, CSS, HTML (com JS e CSS dentro), Markdown, SQL, shell, Go e logs, uma por import. |
 | 🧬 **Monaco e VS Code** | `fromMonarch()` usa as ~80 gramáticas do Monaco (100% dos tokens iguais ao lexer dele) e `fromVSCodeTheme()` os temas do VS Code. |
 | 🧪 **Gramáticas testáveis** | `expectTokens()` com um formato de `^^^` sob cada token, e um [laboratório](docs/lab.html) para criar, testar e exportar. |
 | 🔁 **Tokenização incremental** | Estado por linha, internado e comparado com `===`. Editar re-tokeniza só até convergir. |
@@ -71,7 +71,7 @@
 | 🌐 **Qualquer framework** | Adaptadores para React e Vue, o Web Component `<jona-code>` e um bundle `<script>` clássico. |
 | 🖱️ **Múltiplos cursores** | Alt+clique, seleção em coluna, <kbd>Mod</kbd>+<kbd>D</kbd>, e todos os comandos agem em todos os cursores. |
 | ↩️ **Quebra de linha** | `lineWrapping: true`: quebras calculadas em JS e um mapa de alturas, então a virtualização continua exata. |
-| 🪶 **Estático até ser usado** | `highlight()` gera HTML no servidor, sem o editor (~6,7 kB com JS e tema); `lazyEditor()` troca por um editor no primeiro clique, sem nada se mexer. |
+| 🪶 **Estático até ser usado** | `highlight()` gera HTML no servidor, sem o editor (~6,8 kB com JS e tema); `lazyEditor()` troca por um editor no primeiro clique, sem nada se mexer. |
 | 📜 **Arquivos gigantes** | Mais de 1 milhão de linhas (modo compacto), `append()` estilo `tail -f`, ir para a linha, contagem de busca em segundo plano. |
 | 📝 **Campo de formulário** | `<jona-code name required>` vai junto no `submit`, volta no `reset`, valida e respeita `<fieldset disabled>` e `<label>`. |
 | 📏 **Cresce com a página** | Sem altura fixa, o editor acompanha o conteúdo e continua desenhando só as linhas na tela. `minLines`/`maxLines` limitam. |
@@ -89,7 +89,7 @@ Os editores pequenos travam com arquivos grandes; os que aguentam arquivos grand
 
 | Editor | Configuração | JS gzip | 1ª pintura | Nós no DOM |
 |---|---|---:|---:|---:|
-| **Jonacode** | basicSetup + JavaScript | **39,5 kB** | **24 ms** | **203** |
+| **Jonacode** | basicSetup + JavaScript | **40,5 kB** | **24 ms** | **203** |
 | CodeMirror 6 | basicSetup + JavaScript + One Dark | 165,7 kB | 52 ms | 290 |
 | CodeMirror 5 | JS + números + colchetes + linha ativa + busca | 70,2 kB | 47 ms | 390 |
 | Monaco (mínimo) | editor + linguagens Monarch | 807,8 kB | 129 ms | 440 |
@@ -97,9 +97,9 @@ Os editores pequenos travam com arquivos grandes; os que aguentam arquivos grand
 | prism-code-editor | JS + colchetes + comandos + busca | 11,3 kB | 4.183 ms | 577.461 |
 | CodeJar | CodeJar + Prism | 9,7 kB | 1.588 ms | 422.422 |
 
-<sub>Medido em 26/09/2026 (o tamanho do Jonacode foi atualizado em 28/09, depois das zonas e da medição de fontes; os tempos são os da rodada completa) · Apple M2 · Chrome/153.0.8010.53 headless · mediana de 3 execuções; tempos incluem a espera do próximo quadro (~16 ms) e variam alguns ms entre rodadas. Reproduza com `cd bench/compare && npm install && npm run bench` (`ONLY=jonacode-full,cm6-full` mede só alguns; `RUNS=9` repete mais).</sub>
+<sub>Medido em 26/09/2026 (o tamanho do Jonacode foi atualizado em 22/11, na versão 0.2; os tempos são os da rodada completa de setembro) · Apple M2 · Chrome/153.0.8010.53 headless · mediana de 3 execuções; tempos incluem a espera do próximo quadro (~16 ms) e variam alguns ms entre rodadas. Reproduza com `cd bench/compare && npm install && npm run bench` (`ONLY=jonacode-full,cm6-full` mede só alguns; `RUNS=9` repete mais).</sub>
 
-Onde somos bons, pelo nosso propósito: **4,2× menor que o CodeMirror 6**, a pintura mais rápida com 100 mil linhas, o menor editor que virtualiza e o único com ferramentas prontas para agentes de IA. Onde ainda perdemos: LSP, texto da direita para a esquerda (RTL), testes com leitores de tela reais e no iOS, e maturidade. A [documentação](docs/index.html#comparativo) traz o comparativo completo: mapa interativo, medições por métrica, matriz de recursos, notas com **pesos ajustáveis** por perfil de projeto e quando escolher cada biblioteca.
+Onde somos bons, pelo nosso propósito: **4,1× menor que o CodeMirror 6**, a pintura mais rápida com 100 mil linhas, o menor editor que virtualiza e o único com ferramentas prontas para agentes de IA. Onde ainda perdemos: LSP, texto da direita para a esquerda (RTL), testes com leitores de tela reais e no iOS, e maturidade. A [documentação](docs/index.html#comparativo) traz o comparativo completo: mapa interativo, medições por métrica, matriz de recursos, notas com **pesos ajustáveis** por perfil de projeto e quando escolher cada biblioteca.
 
 <img src="assets/screenshot-scores.png" alt="Notas ponderadas com pesos ajustáveis por critério">
 
@@ -296,7 +296,7 @@ const trecho = lazyEditor(el, { value, language: javascript, extensions: basicSe
 const editor = await trecho.ready        // quando alguém interagir
 ```
 
-Só o destacador, com JavaScript e o One Dark, pesa ~6,7 kB gzip.
+Só o destacador, com JavaScript e o One Dark, pesa ~6,8 kB gzip.
 
 ## Opções
 
@@ -338,7 +338,8 @@ createEditor(el, {
 editor.setOptions({ padding: { x: 16 } })     // refaz as medidas: cliques, cursor e quebra de linha acompanham
 ```
 
-- **`padding`** vale para tudo o que depende da posição do texto: clique, cursor, seleção, largura da quebra de linha, zonas e blocos. Use a opção, e não `--jc-pad-x` no CSS: a variável é escrita pelo editor e as contas saem do mesmo número (`editor.padding` devolve o valor em uso). `highlight()` e `lazyEditor()` aceitam o mesmo `padding`, então a troca do bloco estático pelo editor continua sem nada se mexer.
+- **`padding`** vale para tudo o que depende da posição do texto: clique, cursor, seleção, largura da quebra de linha, zonas e blocos. Use a opção, e não `--jc-pad-x` no CSS: a variável é escrita pelo editor e as contas saem do mesmo número (`editor.padding` devolve o valor em uso).
+- **No destaque estático**, `highlight()` e `lazyEditor()` aceitam o mesmo `padding` e, em `lineNumbers`, o mesmo `{ padding }` dos números (`lazyEditor(el, { lineNumbers: { padding: 4 }, extensions: basicSetup({ lineNumbers: { padding: 4 } }) })`), então a troca do bloco estático pelo editor continua sem nada se mexer.
 - **`diagnostics({ gutter })`**: `true` (padrão) usa uma calha própria, com a largura em `gutterWidth` (padrão 14 px); `'line-numbers'` pinta o número da linha na cor da severidade, com uma barra à esquerda, e não ocupa espaço (precisa do `lineNumbers()`; um clique no número mostra as mensagens); `false` não marca. Uma opção que alguém passa ganha dos padrões de quem só trouxe o `diagnostics()` junto: `[linter(fonte), diagnostics({ gutter: 'line-numbers' })]` funciona em qualquer ordem.
 - **`lineNumberClass(fn)`** é a peça por baixo: uma classe por número de linha (breakpoints, linhas alteradas…), sem calha nova.
 
@@ -369,6 +370,7 @@ A chave é o próprio texto em inglês, menos nas frases longas, que têm uma ch
 | `dispatch(transação)` | Aplica mudanças e seleção: `{ changes, selection, origin, scrollIntoView }`. |
 | `undo()` · `redo()` · `canUndo` · `canRedo` | Histórico. |
 | `setOptions(parcial)` | Atualiza qualquer opção. |
+| `getState()` · `setState(estado)` · `addStateField(chave, campo)` | Guarda e traz de volta um documento inteiro (texto, histórico, seleção, rolagem, dobras): veja [Vários arquivos num editor](#vários-arquivos-num-editor-abas). |
 | `setExtensions(lista)` · `slot()` | Troca as extensões mantendo as que continuam na lista; `slot()` reserva um lugar para trocar só uma parte (é a base do `compartment()`). Veja [Trocar extensões sem perder estado](#trocar-extensões-sem-perder-estado). |
 | `doc` | O documento: `lines`, `lineCount`, `line(n)`, `slice(de, até)`. |
 | `getTokens(linha)` | Tokens de uma linha. |
@@ -385,6 +387,37 @@ A chave é o próprio texto em inglês, menos nas frases longas, que têm uma ch
 | `focus()` · `blur()` · `hasFocus` | Foco. |
 | `on(evento, fn)` | `change`, `selection`, `render`, `scroll`, `focus`, `blur`, `destroy`. Retorna a função que remove o listener. |
 | `destroy()` | Remove DOM, observers e listeners. |
+
+### Vários arquivos num editor (abas)
+
+Um editor só pode mostrar vários arquivos. `getState()` devolve o documento como está agora e `setState()` mostra outro; ao voltar, o arquivo está como você deixou, com o histórico de desfazer dele.
+
+```js
+const abas = new Map()                       // caminho → estado guardado
+let atual = 'main.go'
+
+function abrir(caminho, texto, linguagem) {
+  abas.set(atual, editor.getState())         // guarda o que está na tela
+  editor.setState(abas.get(caminho) ?? { value: texto, language: linguagem })
+  atual = caminho
+}
+```
+
+| Vai e volta com o documento | |
+|---|---|
+| Texto e linguagem | A linguagem leva junto o recuo padrão dela (tab no Go, por exemplo). |
+| Histórico | Desfazer e refazer são de cada arquivo: o <kbd>Mod</kbd>+<kbd>Z</kbd> de uma aba não mexe na outra. |
+| Seleção, rolagem e dobras | O cursor e a posição na tela voltam onde estavam. |
+| Faixas travadas e diagnósticos | `readOnlyRanges` e `setDiagnostics` (todas as fontes) são do documento: voltam com ele, nas posições em que estavam. |
+| A revisão em andamento | O original do `diffView` é do documento: voltar a um arquivo em revisão traz os mesmos trechos pendentes. Um arquivo que nunca teve original é comparado com ele mesmo (nada pendente). |
+
+- **Um arquivo novo é só `{ value }`** (e `language`, se mudar): começa no topo, sem histórico, sem travas.
+- **Para as extensões, a troca é um `setValue`:** um evento `change` com origem `setValue`. `lineWidgets()` recalcula na hora, sem esperar o atraso.
+- **O `onChange` é chamado na troca também**, com `event.origin === 'setValue'`. Os componentes React e Vue já ignoram essa origem; com `createEditor({ onChange })` direto, confira a origem antes de marcar o arquivo como editado.
+- **Zonas, widgets e marcações suas** (`addZone`, `setDecorations`) são do editor, não do documento: remova e recrie ao trocar, ou use `lineWidgets()`.
+- **Dados seus por documento:** `editor.addStateField('favoritos', { save: () => lista, restore: (v) => (lista = v ?? []) })` faz o `getState()` guardar e o `setState()` devolver (`undefined` num arquivo novo).
+- O estado é uma fotografia: edições feitas depois de `getState()` não mudam o que foi guardado, e chamar `getState()` não muda nada no editor (pode ser chamado a cada edição).
+- O estado vive na memória: guarda a linguagem e o que as extensões salvaram, então não serve para `JSON.stringify`. Para gravar em disco, guarde o texto e reabra com `{ value }`.
 
 Comandos avulsos (tree-shakable) ficam em `commands`: `commands.toggleComment(editor)`, `commands.moveLineDown(editor)`, `commands.selectAll(editor)`…
 
@@ -570,7 +603,7 @@ decorationsAt(editor, pos)   // o que está sob uma posição, com o `data` de c
 
 **Tooltips** (+1,5 kB): `hoverTooltip((pos, editor) => conteúdo)` aceita texto, um elemento ou uma Promise. Várias fontes dividem a mesma caixa, que fica na camada superior do navegador (Popover API), então nenhum `overflow: hidden` em volta a corta. `showTooltip(editor, pos, conteúdo)` mostra qualquer coisa, e `showHover` abre pelo teclado.
 
-**Diagnósticos** (~5,1 kB com marcações e tooltips): o Jonacode não traz um linter. `setDiagnostics()` recebe o que o seu produzir, e `linter(fonte)` o roda depois de cada edição, com atraso e descartando respostas de um texto que já mudou. Aparecem como sublinhado ondulado na cor da severidade, marcador na margem (numa calha própria ou no número da linha: veja [Recuo e calhas](#recuo-e-calhas)), mensagem no fim da linha (`inline: true`) e tooltip com correções rápidas; <kbd>F8</kbd> / <kbd>Shift</kbd>+<kbd>F8</kbd> andam entre eles.
+**Diagnósticos** (~5,2 kB com marcações e tooltips): o Jonacode não traz um linter. `setDiagnostics()` recebe o que o seu produzir, e `linter(fonte)` o roda depois de cada edição, com atraso e descartando respostas de um texto que já mudou. Aparecem como sublinhado ondulado na cor da severidade, marcador na margem (numa calha própria ou no número da linha: veja [Recuo e calhas](#recuo-e-calhas)), mensagem no fim da linha (`inline: true`) e tooltip com correções rápidas; <kbd>F8</kbd> / <kbd>Shift</kbd>+<kbd>F8</kbd> andam entre eles.
 
 ```js
 import { linter } from 'jonacode'
@@ -581,7 +614,7 @@ linter((editor) => meuLinter(editor.getValue()).map((e) => ({
 })), { inline: true })
 ```
 
-**Autocomplete** (~4,3 kB, sem LSP): sugere as palavras da linguagem no cursor (`completions` de cada gramática; dentro de um `<script>`, as de JavaScript) e as do documento perto do cursor. Suas fontes podem ser síncronas ou assíncronas: as rápidas aparecem na hora, as lentas se juntam quando chegam, e consultas velhas são canceladas por `AbortSignal`. A busca é aproximada (`gEBI` → `getElementById`). Abre ao digitar ou com <kbd>Ctrl</kbd>+<kbd>Espaço</kbd>, com papéis ARIA de listbox para leitores de tela, e aceita toque e o Enter do teclado virtual no celular.
+**Autocomplete** (~4,2 kB, sem LSP): sugere as palavras da linguagem no cursor (`completions` de cada gramática; dentro de um `<script>`, as de JavaScript) e as do documento perto do cursor. Suas fontes podem ser síncronas ou assíncronas: as rápidas aparecem na hora, as lentas se juntam quando chegam, e consultas velhas são canceladas por `AbortSignal`. A busca é aproximada (`gEBI` → `getElementById`). Abre ao digitar ou com <kbd>Ctrl</kbd>+<kbd>Espaço</kbd>, com papéis ARIA de listbox para leitores de tela, e aceita toque e o Enter do teclado virtual no celular.
 
 ```js
 import { autocomplete, languageWords, documentWords } from 'jonacode'
@@ -708,7 +741,7 @@ treeSitter({ load: cdnTreeSitter, grammars: cdnGrammars() })
 | `markdown` | nenhuma: os blocos de código usam a linguagem deles | — |
 | `sql` | sem wasm pronto no npm: gere com `tree-sitter build --wasm` | — |
 
-O módulo pesa +9,1 kB (com os diagnósticos); o `web-tree-sitter` são 31 kB de JavaScript e 81 kB de wasm (gzip), baixados uma vez por página. Para a IA, `editorTools(editor, { verify: getSyntaxProblems })` devolve os erros de sintaxe ao modelo depois de cada edição, e `createSyntaxChecker(opções).check(texto, 'javascript')` valida a resposta de um modelo antes de aplicá-la.
+O módulo pesa +9,3 kB (com os diagnósticos); o `web-tree-sitter` são 31 kB de JavaScript e 81 kB de wasm (gzip), baixados uma vez por página. Para a IA, `editorTools(editor, { verify: getSyntaxProblems })` devolve os erros de sintaxe ao modelo depois de cada edição, e `createSyntaxChecker(opções).check(texto, 'javascript')` valida a resposta de um modelo antes de aplicá-la.
 
 ## Edição colaborativa
 
@@ -1024,6 +1057,7 @@ Cada linguagem é um módulo próprio: importe só as que usar. Tamanho é o que
 | SQL | `import { sql } from 'jonacode/languages/sql'` | 1,7 kB |
 | Shell (bash) | `import { shell } from 'jonacode/languages/shell'` | 2,0 kB |
 | Log | `import { log } from 'jonacode/languages/log'` | 1,3 kB |
+| Go | `import { go } from 'jonacode/languages/go'` | 1,2 kB |
 
 ```js
 import { createMarkdown } from 'jonacode/languages/markdown'
@@ -1037,7 +1071,9 @@ const markdown = createMarkdown({ codeLanguages: [typescript, css] })
 const html = createHtml({ script: typescript })
 ```
 
-Sem bundler, `dist/jonacode.languages.iife.min.js` (~10 kB gzip) acrescenta todas ao global `Jonacode`, reaproveitando o núcleo do `jonacode.iife.min.js`.
+O Go declara o próprio recuo (`indent: { useTabs: true, size: 4 }`): um editor com `language: go` indenta com tab sem que o app precise dizer, e `insertSpaces: true` continua ganhando se você passar.
+
+Sem bundler, `dist/jonacode.languages.iife.min.js` (~11 kB gzip) acrescenta todas ao global `Jonacode`, reaproveitando o núcleo do `jonacode.iife.min.js`.
 
 ### Uma linguagem dentro da outra
 
@@ -1234,21 +1270,21 @@ Medido com esbuild (minificado + gzip), com `npm run size`:
 
 | Import | min | gzip |
 |---|---:|---:|
-| `createEditor` (núcleo + One Dark) | 79,8 kB | **27,3 kB** |
-| + `basicSetup()` | 114,7 kB | 38,4 kB |
-| + `basicSetup()` + JavaScript | 118,8 kB | 40,1 kB |
-| Todas as 11 linguagens (além do núcleo, com as listas do autocomplete) | 29,4 kB | 10,1 kB |
-| Só `highlight()` + JavaScript + One Dark (sem editor) | — | ~6,7 kB |
+| `createEditor` (núcleo + One Dark) | 80,9 kB | **27,6 kB** |
+| + `basicSetup()` | 115,8 kB | 38,7 kB |
+| + `basicSetup()` + JavaScript | 119,9 kB | 40,4 kB |
+| Todas as 12 linguagens (além do núcleo, com as listas do autocomplete) | 32,0 kB | 10,9 kB |
+| Só `highlight()` + JavaScript + One Dark (sem editor) | — | ~6,8 kB |
 | `setDecorations` · `hoverTooltip` · `folding` | — | +1,2 · +1,5 · +1,5 kB |
 | `addZone` + `addWidget` + `addOverlay` | — | +3,3 kB |
 | `lineWidgets` (já com as zonas) · `compartment` | — | +3,5 · +0,1 kB |
 | `PHRASES` · `ptBR` (`jonacode/locales/pt-BR`) | — | +0,7 · +1,0 kB |
-| `diagnostics`/`linter` · `autocomplete` (cada um já com o que precisa) | — | +5,1 · +4,3 kB |
+| `diagnostics`/`linter` · `autocomplete` (cada um já com o que precisa) | — | +5,2 · +4,2 kB |
 | `fromMonarch` · `fromVSCodeTheme` · `lazyEditor` | — | +3,1 · +1,7 · +1,6 kB |
-| `readOnlyRanges` · `diffView` · `mergeView` | — | +1,9 · +5,7 · +4,4 kB |
+| `readOnlyRanges` · `diffView` · `mergeView` | — | +2,0 · +5,7 · +4,4 kB |
 | `applyEdits` · `editorTools` (com `applyEdits`, marcações e contexto) | — | +5,7 · +11,8 kB |
 | `inlineSuggestion` · `inlineEdit` | — | +3,3 · +4,6 kB |
-| `treeSitter` (com os diagnósticos; o `web-tree-sitter` e as gramáticas vêm à parte) | — | +9,1 kB |
+| `treeSitter` (com os diagnósticos; o `web-tree-sitter` e as gramáticas vêm à parte) | — | +9,3 kB |
 | `collab` + `yjs` (o Yjs e o provedor vêm à parte) | — | +6,3 kB |
 
 O núcleo já inclui múltiplos ranges, quebra de linha, o suporte a teclado virtual, a virtualização pela página, o modo compacto para milhões de linhas, o espelho para leitores de tela, o aninhamento de linguagens, o mecanismo de dobras, os espaços para blocos e zonas entre linhas, a medição de fontes proporcionais e a entrada segura para agentes que preenchem o campo. Os módulos de IA pesam mais que as outras extensões (as descrições das ferramentas e as mensagens de erro são texto para o modelo), mas só entram se você importar. `npm run size:check` falha o CI se algum cenário passar do orçamento em `size-budget.json`. A busca (dentro do `basicSetup`) pesa 6,3 kB desde que ganhou a busca em várias linhas. Busca (+3,5 kB), múltiplos cursores (+0,6 kB), toque (+1,6 kB) e tokens personalizados (+0,5 kB) só entram se você importar.
@@ -1272,9 +1308,10 @@ O núcleo já inclui múltiplos ranges, quebra de linha, o suporte a teclado vir
 | <kbd>Mod</kbd> <kbd>L</kbd> · <kbd>Mod</kbd> <kbd>]</kbd> · <kbd>Mod</kbd> <kbd>[</kbd> | Selecionar linha · indentar · desindentar ¹ |
 | <kbd>Mod</kbd> <kbd>D</kbd> · <kbd>Mod</kbd> <kbd>Shift</kbd> <kbd>L</kbd> | Próxima ocorrência · todas as ocorrências ² |
 | <kbd>Mod</kbd> <kbd>Alt</kbd> <kbd>↑</kbd>/<kbd>↓</kbd> · <kbd>Esc</kbd> | Cursor acima/abaixo · voltar a um cursor ² |
-| <kbd>Mod</kbd> <kbd>F</kbd> · <kbd>Mod</kbd> <kbd>Alt</kbd> <kbd>F</kbd> · <kbd>F3</kbd> | Buscar · substituir · próxima ³ |
+| <kbd>Mod</kbd> <kbd>F</kbd> · <kbd>Mod</kbd> <kbd>Alt</kbd> <kbd>F</kbd> · <kbd>F3</kbd> (ou <kbd>⌘</kbd> <kbd>G</kbd> no macOS) | Buscar · substituir · próxima ³ |
+| <kbd>Ctrl</kbd> <kbd>G</kbd> | Ir para a linha ⁴ |
 
-¹ `editingKeymap` · ² `multiCursor()` · ³ `search()`, todos incluídos no `basicSetup()`. Sem seleção, copiar/recortar agem na linha inteira (como no VS Code). A lista completa está na documentação.
+¹ `editingKeymap` · ² `multiCursor()` · ³ `search()` · ⁴ `gotoLine()`, todos incluídos no `basicSetup()`. Sem seleção, copiar/recortar agem na linha inteira (como no VS Code). A lista completa está na documentação.
 
 ## Desenvolvimento
 
@@ -1282,6 +1319,7 @@ O núcleo já inclui múltiplos ranges, quebra de linha, o suporte a teclado vir
 npm install
 npm run dev        # compila em watch e serve o playground em http://localhost:5173/examples/ (e mobile.html, viewer.html)
 npm test           # testes (node:test, sem dependências)
+npm run typecheck  # tsc em src, test, scripts e também nos testes e2e
 npm run build      # dist/ (ESM + .d.ts com imports .js) e o bundle IIFE
 npm run check:package  # empacota (npm pack), instala num projeto limpo e compila com um tsconfig comum
 npm run docs       # gera docs/index.html e docs/lab.html (arquivos únicos)
@@ -1306,7 +1344,7 @@ src/
 ├── tree-sitter/         # treeSitter(): validação, correções e árvore sintática (web-tree-sitter entra por injeção)
 ├── collab/              # collab(): edição colaborativa, adaptador Yjs, histórico só das suas edições
 ├── merge.ts             # mergeView (lado a lado)
-├── languages/           # javascript (+ jsx), typescript (+ tsx), json, css, html, markdown, sql, shell, log
+├── languages/           # javascript (+ jsx), typescript (+ tsx), json, css, html, markdown, sql, shell, go, log
 ├── language/monarch.ts  # importador de gramáticas do Monaco
 ├── highlight.ts, lazy.ts # destaque estático (SSR) e editor sob demanda
 ├── testing.ts           # describeTokens / expectTokens
@@ -1323,7 +1361,6 @@ O código fonte usa TypeScript só com sintaxe apagável (`erasableSyntaxOnly`) 
 - Colaboração: as quebras de linha do texto compartilhado são `\n`. Com um backend próprio, o desfazer só das suas edições descarta o passo em que alguém editou por cima (com Yjs, o `Y.UndoManager` decide).
 - Diff: aceitar um trecho muda o original, não o documento, então não entra no desfazer. O `mergeView` com quebra de linha só alinha quando os dois lados têm a mesma largura.
 - Na quebra de linha, CJK e emoji usam a largura medida de um caractere de cada tipo, e numa fonte proporcional as letras fora do ASCII (acentuadas, por exemplo) contam como um `x`: uma linha visual cheia delas pode passar alguns pixels da borda. No Safari, a posição de letras fora do ASCII (e de todas numa fonte proporcional) sai arredondada para o pixel inteiro pelo próprio navegador, então o cursor pode ficar até 1 px fora.
-- `lazyEditor()` desenha os números de linha do bloco estático com o espaçamento padrão: com `lineNumbers({ padding })` diferente do padrão, o texto se desloca na troca pelo editor. O `padding` do editor é espelhado.
 - Zonas longe da tela guardam a última altura medida: se o conteúdo mudar enquanto ela está fora de vista, o ajuste acontece quando ela volta à tela.
 - No modo compacto (documentos acima de ~450 mil linhas), arrastar a barra de rolagem move o texto mais rápido que 1:1 (a roda do mouse e o teclado continuam 1:1). Um editor que cresce com a página e passa desse tamanho não tem a rolagem até o cursor ajustada.
 - `fromVSCodeTheme` usa uma cor por tipo de token: regras específicas de uma linguagem no tema são ignoradas. `semanticTokenColors` não é lido.

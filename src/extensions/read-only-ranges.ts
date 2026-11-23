@@ -117,12 +117,21 @@ function setup(editor: Editor): State {
       if (states.get(editor) === st) draw(editor, st!)
     })
   })
+  // The ranges belong to the document: they come back with it (`editor.setState`).
+  const offField = editor.addStateField<readonly ProtectedRange[]>('readOnlyRanges', {
+    save: () => st!.ranges,
+    restore(ranges = []) {
+      st!.ranges = ranges.slice()
+      draw(editor, st!)
+    },
+  })
   st = {
     ranges: [],
     options: {},
     dispose() {
       offFilter()
       offChange()
+      offField()
       states.delete(editor)
       if (editor.dom) setDecorations(editor, SET, [])
     },

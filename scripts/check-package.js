@@ -50,6 +50,7 @@ try {
 import { basicSetup, compartment, createEditor, highlight, lineRange, readOnlyRanges, PHRASES, type Editor, type PhraseKey, type Phrases } from '${pkg.name}'
 import { editorTools, inlineEdit } from '${pkg.name}/ai'
 import { highlightAll } from '${pkg.name}/highlight'
+import { go } from '${pkg.name}/languages/go'
 import { json } from '${pkg.name}/languages/json'
 import { typescript } from '${pkg.name}/languages/typescript'
 import { ptBR } from '${pkg.name}/locales/pt-BR'
@@ -63,7 +64,7 @@ const editor: Editor = createEditor(document.body, { language: json, theme: oneL
 review.reconfigure(editor, null)
 const key: PhraseKey = 'Accept'
 export const html: string = highlight('{}', typescript) + PHRASES[key]
-export const used = [editorTools, inlineEdit, highlightAll, fromMonarch, expectTokens, lineRange]
+export const used = [editorTools, inlineEdit, highlightAll, fromMonarch, expectTokens, lineRange, go]
 
 // The types are really there (an \`any\` fallback would let these through).
 // @ts-expect-error not a phrase key

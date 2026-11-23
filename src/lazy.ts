@@ -6,15 +6,18 @@
  * someone actually edits one.
  */
 import { Editor, type EditorOptions } from './editor.ts'
-import { ensureHighlightStyles, highlight } from './highlight.ts'
+import { ensureHighlightStyles, highlight, type HighlightOptions } from './highlight.ts'
 import { plainText } from './language/language.ts'
 import { oneDark } from './themes/one-dark.ts'
 
 export interface LazyEditorOptions extends EditorOptions {
   /** When to create the editor. Default `'interaction'` (pointer down, tap or focus). */
   on?: 'interaction' | 'visible' | 'idle'
-  /** Line numbers in the static preview; match your extensions (`basicSetup` has them). Default true. */
-  lineNumbers?: boolean
+  /**
+   * Line numbers in the static preview; match your extensions (`basicSetup` has them). Default true.
+   * With `lineNumbers({ padding })` in the editor, pass the same `{ padding }` here.
+   */
+  lineNumbers?: HighlightOptions['lineNumbers']
 }
 
 export interface LazyEditor {

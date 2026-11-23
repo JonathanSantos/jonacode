@@ -143,9 +143,12 @@ test.describe('fonts and sizes', () => {
     })
     expect(r.rows).toBeGreaterThan(3)
     expect(r.over).toBeLessThanOrEqual(0)
-    // Click into the third visual row of the upper-case line.
+    // Click into the third visual row of the upper-case line (scrolled into view: with a wider
+    // fallback font the first line takes more rows and pushes it below the fold).
     const target = await page.evaluate(() => {
       const text = ed.doc.line(1)
+      ed.scrollDOM.scrollTop = ed.lineBlock(1).top - ed.lineHeight
+      ed.flush()
       const b = ed.lineBlock(1)
       const y = b.top + ed.lineHeight * 2.5
       const pos = ed.posAtCoords(40, y)

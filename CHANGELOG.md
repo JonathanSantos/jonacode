@@ -19,10 +19,14 @@ Melhorias que saíram do uso do Jonacode como editor do JCode.
 - **Frases tipadas.** `PHRASES` lista todas as chaves da interface; a opção `phrases` é `Partial<Record<PhraseKey, string>>`. Pacote pronto em `jonacode/locales/pt-BR`.
 - **`ensureHighlightStyles(raiz, ...temas)`.** Põe na página (ou no shadow root) o CSS do destaque estático, uma vez só.
 - **Recuo padrão por linguagem.** `indent: { useTabs, size }` em `defineLanguage`; o editor usa quando o app não passa `insertSpaces` nem `tabSize`.
+- **Vários arquivos num editor.** `editor.getState()` e `editor.setState(estado)` guardam e trazem de volta um documento inteiro: texto, linguagem, histórico de desfazer, seleção, rolagem e dobras. As faixas travadas, os diagnósticos e o original do `diffView` vão junto; `addStateField` deixa uma extensão guardar o que é dela por documento.
+- **Go.** `jonacode/languages/go`, com o recuo por tab declarado na própria linguagem.
+- **`lazyEditor` e `highlight` com `lineNumbers: { padding }`.** O bloco estático espelha o espaço em volta dos números, como já espelhava o `padding` do texto.
 - **Pacote.** Entrada `jonacode/locales/*`; os `.d.ts` importam com `.js` (compilam sem `allowImportingTsExtensions`); `npm run check:package` confere o pacote instalado num projeto limpo.
 
 ### Mudanças de comportamento
 
+- No Windows e no Linux, Ctrl+G deixou de ser "próxima ocorrência" da busca e passou a abrir "ir para a linha", como a documentação já dizia; a próxima ocorrência é F3. No macOS nada muda (⌘G e Ctrl+G).
 - `editor.phrase(chave)` e a opção `phrases` são tipados por `PhraseKey`. Um texto que não está em `PHRASES` (de uma extensão sua) precisa de `as PhraseKey`.
 - A frase longa da edição com IA virou a chave `'inlineEdit.conflict'`. Uma tradução feita pela frase antiga em inglês continua funcionando em execução, mas um objeto literal de `phrases` com essa chave antiga não compila mais: troque pela chave nova, ou use o pacote `ptBR`.
 - No componente Vue, `insertSpaces` não tem mais o padrão `true`: sem a prop, vale o padrão da linguagem (espaços, a não ser que ela peça tab).
@@ -31,10 +35,18 @@ Melhorias que saíram do uso do Jonacode como editor do JCode.
 
 ### Correções
 
+- **Ctrl+G no Windows e no Linux.** "Ir para a linha" nunca abria: a busca registrava `Mod-g` ("próxima ocorrência"), que fora do macOS é o mesmo Ctrl+G, e ficava com a tecla. Agora `Mod-g` só vale no macOS (⌘G); nos outros sistemas a próxima ocorrência é F3, como no VS Code. Era a causa de 7 dos 8 testes que falhavam no CI.
 - `diagnostics()` compartilhado: quem instalou primeiro levava a calha, o tooltip e os diagnósticos de todos ao sair, e as opções dele ganhavam das de quem veio depois. Agora a interface fica enquanto alguém usa, e uma opção passada por alguém ganha dos padrões dos outros.
 - `setReadOnlyRanges` chamado de dentro de outra extensão: a proteção saía junto com essa extensão, em silêncio, e as faixas continuavam listadas.
 - Edição com IA recusada por um filtro de mudanças (uma faixa travada): a resposta era descartada sem aviso. Agora fica na prévia, com a mensagem `'inlineEdit.rejected'` e o botão de copiar.
 - `highlightAll({ root })` com `root` num shadow root punha o CSS no documento, e o bloco saía sem cor.
+
+### Testes e ferramentas
+
+- Testes de ponta a ponta dos componentes React e Vue (`e2e/adapters.spec.ts`); `react` e `react-dom` entraram como dependências de desenvolvimento.
+- `npm run typecheck` passou a cobrir os testes e2e.
+- `npm run dev` troca os imports dos `.d.ts` para `.js` a cada compilação, como o build.
+- Um teste de fontes clicava fora da área visível quando a fonte de reserva do Linux era mais larga.
 
 ## 0.1.0
 

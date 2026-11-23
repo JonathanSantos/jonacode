@@ -83,6 +83,7 @@ function widen(editor: Editor, d: Diagnostic): { from: Pos; to: Pos } {
  * the edits until the next call.
  */
 export function setDiagnostics(editor: Editor, diagnostics: readonly Diagnostic[], source = 'default'): void {
+  keepWithDocument(editor)
   const decos: Decoration[] = []
   for (const d of diagnostics) {
     const { from, to } = widen(editor, d)
@@ -94,6 +95,23 @@ export function setDiagnostics(editor: Editor, diagnostics: readonly Diagnostic[
   keys.add(key)
   setDecorations(editor, key, decos)
   if (inlineOn.has(editor)) drawLens(editor)
+}
+
+const kept = new WeakSet<Editor>()
+/** Diagnostics belong to the document: they come back with it (`editor.setState`), every source. */
+function keepWithDocument(editor: Editor): void {
+  if (kept.has(editor)) return
+  kept.add(editor)
+  editor.untracked(() => editor.addStateField<Record<string, readonly Decoration[]>>('diagnostics', {
+    save: () => Object.fromEntries([...keysOf(editor)].map((key) => [key, getDecorations(editor, key)])),
+    restore(saved = {}) {
+      let keys = sources.get(editor)
+      if (!keys) sources.set(editor, (keys = new Set([SET])))
+      for (const key of Object.keys(saved)) keys.add(key)
+      for (const key of keys) setDecorations(editor, key, saved[key] ?? [])
+      if (inlineOn.has(editor)) drawLens(editor)
+    },
+  }))
 }
 
 /** The first message of the worst diagnostic of each line, after its end (all sources). */

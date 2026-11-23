@@ -73,6 +73,7 @@ const sizes = {
     markdown: await extra(['markdown'], './src/languages/markdown.ts'),
     sql: await extra(['sql'], './src/languages/sql.ts'),
     shell: await extra(['shell'], './src/languages/shell.ts'),
+    go: await extra(['go'], './src/languages/go.ts'),
     oneLight: await extra(['oneLight'], './src/themes/one-light.ts'),
     element: await extra(['defineJonacodeElement'], './src/adapters/element.ts'),
     react: await extra(['CodeEditor'], './src/adapters/react.ts'),

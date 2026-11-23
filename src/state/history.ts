@@ -27,6 +27,20 @@ function sameCursors(a: EditorSelection, b: EditorSelection): boolean {
   return a.ranges.every((r, i) => eqPos(r.head, b.ranges[i]!.head))
 }
 
+/** The undo and redo steps of a document, as `History.snapshot()` copies them. */
+export interface HistorySnapshot {
+  done: HistoryEntry[]
+  undone: HistoryEntry[]
+}
+
+/** A copy whose last step no longer absorbs typing (that step is the only one that is ever changed in place). */
+function detached(list: readonly HistoryEntry[], time?: number): HistoryEntry[] {
+  const out = list.slice()
+  const last = out[out.length - 1]
+  if (last) out[out.length - 1] = { ...last, changes: last.changes.slice(), time: time ?? last.time }
+  return out
+}
+
 export class History {
   done: HistoryEntry[] = []
   undone: HistoryEntry[] = []
@@ -58,5 +72,16 @@ export class History {
   clear(): void {
     this.done.length = 0
     this.undone.length = 0
+  }
+
+  /** The steps as they are now. Taking it changes nothing here: typing still merges into the current step. */
+  snapshot(): HistorySnapshot {
+    return { done: detached(this.done), undone: this.undone.slice() }
+  }
+
+  /** Takes the steps of a snapshot (which stays usable: nothing done here changes it). */
+  restore(snapshot: HistorySnapshot): void {
+    this.done = detached(snapshot.done, 0)
+    this.undone = snapshot.undone.slice()
   }
 }
